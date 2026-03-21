@@ -25,9 +25,12 @@ MCP is now Linux Foundation infrastructure with 97M+ monthly SDK downloads. GREX
 
 ## Deployment
 
-**Public instance** — a global shared graph for open-source agents and community frameworks. Trust compounds across the ecosystem. At maturity: the DNS layer of agent infrastructure.
 
 **Self-hosted** — runs entirely within your VPC. Docker Compose for a team, Kubernetes for an enterprise fleet. Your failure telemetry never leaves. The graph learns your specific stack.
+
+**Possible in the future:**
+
+**Public instance** — a global shared graph for open-source agents and community frameworks. Trust compounds across the ecosystem. At maturity: the DNS layer of agent infrastructure.
 
 **Federated (opt-in)** — private instances can export anonymized solutions to the public graph. Strip rules are server-side enforced. Operators preview exactly what would be exported before enabling.
 
