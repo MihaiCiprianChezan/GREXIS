@@ -1,0 +1,29 @@
+[
+  {
+    "failure_signature": {
+      "error_type": "RateLimitError",
+      "error_code": "429",
+      "tool_name": "web_search",
+      "severity": "blocking",
+      "details": "web_search tool returns 429 when >3 concurrent calls on LangChain 0.3.x"
+    },
+    "goal_state": "Retrieve search results for research task",
+    "environment": {
+      "llm": "claude-sonnet-4-6",
+      "framework": "langchain",
+      "framework_version": "0.3.1",
+      "runtime": "python-3.11"
+    },
+    "resolution": {
+      "solution_steps": [
+        "Detect 429 response after 2nd consecutive retry",
+        "Switch to exponential backoff with 8s base delay",
+        "Add random jitter of +/-500ms per attempt",
+        "Retry up to 5 times with increasing delay"
+      ],
+      "solution_summary": "Exponential backoff with jitter (8s base, +/-500ms) resolves web_search rate limiting. Lower base delays still trigger 429.",
+      "confidence": "inferred"
+    },
+    "provenance": "https://github.com/langchain-ai/langchain/issues/12345"
+  }
+]

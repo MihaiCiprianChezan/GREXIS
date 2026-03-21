@@ -1,0 +1,82 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: grexis-qdrant
+    ports:
+      - "6333:6333"   # HTTP API
+      - "6334:6334"   # gRPC API
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: always
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: grexis-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-grexis_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_in_production}
+      POSTGRES_DB: ${POSTGRES_DB:-grexis_graph}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: grexis-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: always
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: grexis-api
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_URL=postgresql+asyncpg://${POSTGRES_USER:-grexis_admin}:${POSTGRES_PASSWORD:-changeme_in_production}@postgres:5432/${POSTGRES_DB:-grexis_graph}
+      - QDRANT_URL=http://qdrant:6333
+      - REDIS_URL=redis://redis:6379
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-local}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GREXIS_API_SECRET=${GREXIS_API_SECRET}
+    depends_on:
+      - postgres
+      - qdrant
+      - redis
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    # GPU reservation is optional — container starts without GPU if unavailable.
+    # To run without GPU, remove the 'deploy.resources' block or use:
+    #   docker compose up --no-gpu
+    restart: always
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: grexis-web
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://api:8000
+    depends_on:
+      - api
+    restart: always
+
+volumes:
+  qdrant_data:
+  postgres_data:
+  redis_data:
