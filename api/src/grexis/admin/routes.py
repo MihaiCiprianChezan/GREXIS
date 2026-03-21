@@ -177,6 +177,22 @@ async def update_solution(solution_id: str, request: Request, admin=Depends(requ
         *params,
     )
 
+    # Sync updated fields to Qdrant point (dual-write consistency)
+    qdrant_syncable = {"status", "confidence_score", "error_type", "severity",
+                       "framework", "framework_version", "runtime", "llm"}
+    qdrant_updates = {k: v for k, v in body.items() if k in qdrant_syncable}
+    if qdrant_updates:
+        row = await deps.postgres.fetchrow(
+            "SELECT qdrant_point_id FROM grexis.solutions WHERE id = $1", solution_id
+        )
+        if row and row["qdrant_point_id"]:
+            from qdrant_client.models import SetPayload
+            await deps.qdrant.client.set_payload(
+                collection_name="solutions",
+                payload=qdrant_updates,
+                points=[row["qdrant_point_id"]],
+            )
+
     await log_to_audit(
         deps.postgres, "human_admin", "admin", "update_solution",
         target_id=solution_id, payload=body,

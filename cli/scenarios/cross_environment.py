@@ -90,6 +90,7 @@ async def run(client, token: str, reporter: Reporter) -> bool:
         check("feedback_id" in fb, f"got {fb}")
 
     # 4. Same-framework query (LangChain -> LangChain) should find it
+    await client.admin_activate_solution(solution_id)
     with reporter.step("Same-framework query (LangChain) finds solution") as check:
         results = await client.query_solutions(
             token=token_lc,

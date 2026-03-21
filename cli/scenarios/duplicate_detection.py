@@ -56,10 +56,10 @@ async def run(client, token: str, reporter: Reporter) -> bool:
                 "tool_name": "data_processor",
                 "operation": "load_dataset",
                 "severity": "blocking",
-                "details": f"Memory exhausted while loading large CSV file [{unique_tag}]",
+                "details": f"Out of memory when loading a large CSV dataset [{unique_tag}]",
             },
             environment=ENV,
-            goal_state="Load a large CSV file into memory",
+            goal_state="Load a 2GB CSV into memory for data analysis",
         )
         is_dup = prob2.get("duplicate_of") is not None
         check(is_dup, f"expected duplicate_of, got {prob2}")
@@ -71,18 +71,19 @@ async def run(client, token: str, reporter: Reporter) -> bool:
 
     # 5. Submit clearly different problem -- should NOT be a duplicate
     with reporter.step("Submit different problem (should NOT be duplicate)") as check:
+        diff_tag = uuid.uuid4().hex[:8]
         prob3 = await client.submit_problem(
             token=token,
             failure_signature={
-                "error_type": "SyntaxError",
-                "error_code": "PARSE_FAIL",
-                "tool_name": "json_parser",
-                "operation": "parse",
-                "severity": "blocking",
-                "details": f"Unexpected token '<' at position 0 [{unique_tag}]",
+                "error_type": f"UniqueTestError_{diff_tag}",
+                "error_code": "UNIQUE_CODE",
+                "tool_name": "unique_tool",
+                "operation": "unique_op",
+                "severity": "cosmetic",
+                "details": f"A completely unique error that should never match [{diff_tag}]",
             },
             environment=ENV,
-            goal_state="Parse JSON response from API",
+            goal_state=f"Handle unique test scenario [{diff_tag}]",
         )
         not_dup = prob3.get("duplicate_of") is None
         pid3 = prob3.get("problem_id")
@@ -98,10 +99,10 @@ async def run(client, token: str, reporter: Reporter) -> bool:
                 "tool_name": "data_processor",
                 "operation": "load_dataset",
                 "severity": "blocking",
-                "details": f"Cannot allocate memory for CSV loading [{unique_tag}]",
+                "details": f"Out of memory loading large CSV dataset into memory [{unique_tag}]",
             },
             environment=ENV,
-            goal_state="Read large CSV into dataframe",
+            goal_state="Load a 2GB CSV into memory for analysis",
         )
         is_dup3 = prob4.get("duplicate_of") is not None
         check(is_dup3, f"expected duplicate_of, got {prob4}")

@@ -77,14 +77,15 @@ class QdrantClient:
         limit: int = 10,
         score_threshold: float | None = None,
     ) -> list:
-        return await self.client.search(
+        result = await self.client.query_points(
             collection_name=collection,
-            query_vector=vector,
+            query=vector,
             query_filter=filter_,
             limit=limit,
             score_threshold=score_threshold,
             search_params=SearchParams(exact=False, hnsw_ef=128),
         )
+        return result.points
 
     async def find_cluster(self, failure_sig) -> None:
         """Placeholder for cluster expansion lookup.

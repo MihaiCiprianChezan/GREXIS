@@ -55,18 +55,24 @@ async def run(client, token: str, reporter: Reporter) -> bool:
         rejected = prob.get("error") == "SENSITIVE_DATA_DETECTED"
         check(rejected, f"expected SENSITIVE_DATA_DETECTED, got {prob}")
 
-    # C: Secret injection -- JWT in feedback comment
+    # C: Secret injection -- JWT in solution steps
     with reporter.step("Secret injection (JWT) is rejected") as check:
         jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"
-        fb = await client.submit_feedback(
+        sol = await client.submit_solution(
             token=token,
-            solution_id=str(uuid.uuid4()),
-            outcome="success",
-            environment=ENV,
-            comment=f"Use this token: {jwt}",
+            problem={
+                "failure_signature": {"error_type": "AuthError", "details": "Token expired"},
+                "goal_state": "Fix authentication",
+                "environment": ENV,
+            },
+            resolution={
+                "solution_summary": "Use this JWT token",
+                "solution_steps": [f"Set AUTH_TOKEN={jwt}"],
+                "confidence": "empirical",
+            },
         )
-        rejected = fb.get("error") == "SENSITIVE_DATA_DETECTED"
-        check(rejected, f"expected SENSITIVE_DATA_DETECTED, got {fb}")
+        rejected = sol.get("error") == "SENSITIVE_DATA_DETECTED"
+        check(rejected, f"expected SENSITIVE_DATA_DETECTED, got {sol}")
 
     # D: Rate limiting -- anonymous rapid-fire queries
     with reporter.step("Anonymous rate limit triggers within 15 requests") as check:

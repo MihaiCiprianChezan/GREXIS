@@ -1,5 +1,4 @@
 """GREXIS test client -- wraps MCP tool calls via SSE transport."""
-import asyncio
 import json
 import logging
 import httpx
@@ -8,10 +7,10 @@ logger = logging.getLogger(__name__)
 
 
 class GrexisClient:
-    """Direct HTTP client for testing GREXIS.
+    """Test client for GREXIS.
 
-    Uses the admin REST API for verification and a simplified MCP call
-    approach via direct tool invocation through a test endpoint.
+    Maintains a persistent MCP SSE session for tool calls and uses
+    httpx for admin REST API verification.
     """
 
     def __init__(self, base_url: str, admin_secret: str | None = None):
@@ -19,8 +18,37 @@ class GrexisClient:
         self.admin_secret = admin_secret
         self.http = httpx.AsyncClient(base_url=self.base_url, timeout=30.0)
         self._admin_cookie: str | None = None
+        # MCP session state (managed by connect/disconnect)
+        self._mcp_session = None
+        self._mcp_ctx_stack = []  # context manager stack for cleanup
+
+    async def connect(self):
+        """Establish persistent MCP SSE session."""
+        from contextlib import AsyncExitStack
+        from mcp import ClientSession
+        from mcp.client.sse import sse_client
+
+        self._exit_stack = AsyncExitStack()
+        await self._exit_stack.__aenter__()
+        read, write = await self._exit_stack.enter_async_context(
+            sse_client(f"{self.base_url}/mcp/sse")
+        )
+        self._mcp_session = await self._exit_stack.enter_async_context(
+            ClientSession(read, write)
+        )
+        await self._mcp_session.initialize()
+        logger.info("MCP session connected")
+
+    async def disconnect(self):
+        """Close MCP SSE session."""
+        if hasattr(self, "_exit_stack"):
+            await self._exit_stack.__aexit__(None, None, None)
+            self._mcp_session = None
+        logger.info("MCP session disconnected")
 
     async def close(self):
+        """Close all connections."""
+        await self.disconnect()
         await self.http.aclose()
 
     async def admin_login(self):
@@ -87,38 +115,34 @@ class GrexisClient:
         resp.raise_for_status()
         return resp.json()
 
+    async def admin_activate_solution(self, solution_id: str) -> dict:
+        resp = await self.http.patch(
+            f"/admin/solutions/{solution_id}",
+            json={"status": "active"},
+            headers=self._admin_headers,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
     async def admin_get_metrics(self) -> dict:
         resp = await self.http.get("/admin/metrics", headers=self._admin_headers)
         resp.raise_for_status()
         return resp.json()
 
-    # --- MCP Tool calls via SSE ---
-    # For simplicity, we use the mcp Python SDK's SSE client
+    # --- MCP Tool calls via persistent SSE session ---
 
     async def call_mcp_tool(self, tool_name: str, arguments: dict) -> dict:
-        """Call an MCP tool via the SSE transport.
-
-        Uses httpx-sse to establish SSE connection and send tool call.
-        Falls back to a direct POST approach if SSE is not available.
-        """
-        try:
-            from mcp import ClientSession
-            from mcp.client.sse import sse_client
-
-            async with sse_client(f"{self.base_url}/mcp/sse") as (read, write):
-                async with ClientSession(read, write) as session:
-                    await session.initialize()
-                    result = await session.call_tool(tool_name, arguments)
-                    # Result is a list of TextContent
-                    if result.content and len(result.content) > 0:
-                        text = result.content[0].text
-                        return json.loads(text)
-                    return {}
-        except ImportError:
-            logger.warning("mcp SDK not available, cannot call MCP tools")
-            raise RuntimeError(
-                "mcp SDK required for tool calls. Install with: pip install mcp"
-            )
+        """Call an MCP tool via the persistent SSE session."""
+        if not self._mcp_session:
+            await self.connect()
+        result = await self._mcp_session.call_tool(tool_name, arguments)
+        if result.isError:
+            text = result.content[0].text if result.content else "Unknown error"
+            return {"error": text}
+        if result.content and len(result.content) > 0:
+            text = result.content[0].text
+            return json.loads(text)
+        return {}
 
     # --- Convenience wrappers ---
 
@@ -129,15 +153,12 @@ class GrexisClient:
         email: str | None = None,
         framework: str | None = None,
     ) -> dict:
-        return await self.call_mcp_tool(
-            "register_agent",
-            {
-                "agent_token": token,
-                "agent_description": description,
-                "human_operator_email": email,
-                "framework": framework,
-            },
-        )
+        args = {"agent_token": token, "agent_description": description}
+        if email:
+            args["human_operator_email"] = email
+        if framework:
+            args["framework"] = framework
+        return await self.call_mcp_tool("register_agent", args)
 
     async def submit_problem(
         self,

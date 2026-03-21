@@ -85,6 +85,7 @@ async def run(client, token: str, reporter: Reporter) -> bool:
         check("feedback_id" in fb1, f"got {fb1}")
 
     # A5: Query finds S1
+    await client.admin_activate_solution(s1_id)
     with reporter.step("Query finds S1 in results") as check:
         q1 = await client.query_solutions(token_a, FAILURE, ENV, "Rate limit on web search")
         items = q1 if isinstance(q1, list) else [q1]

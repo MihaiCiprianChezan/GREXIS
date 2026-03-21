@@ -78,6 +78,7 @@ async def run(client, token: str, reporter: Reporter) -> bool:
         check(solution_id is not None, f"got {sol}")
 
     # 4. Query solutions
+    await client.admin_activate_solution(solution_id)
     with reporter.step("query_solutions finds our solution") as check:
         results = await client.query_solutions(
             token=token,

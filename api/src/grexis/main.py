@@ -2,9 +2,8 @@ import json
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
 from mcp.server.sse import SseServerTransport
 from mcp.types import TextContent
 
@@ -108,27 +107,37 @@ async def call_tool(name: str, arguments: dict):
     return [TextContent(type="text", text=json.dumps(result))]
 
 
-# Mount MCP SSE endpoints (MCP SDK 1.x uses ASGI-level connect_sse/handle_post_message)
-sse = SseServerTransport("/mcp/messages/")
+# Mount MCP SSE transport as a raw ASGI sub-app.
+# FastAPI's mount("/mcp", app) sets root_path="/mcp" and strips "/mcp" from path.
+# SseServerTransport("/messages") builds POST URL as root_path + "/messages" = "/mcp/messages".
+# We use a raw ASGI app to avoid Starlette Route/Mount wrappers that would either
+# conflict with SSE's own response handling or modify root_path incorrectly.
+
+sse = SseServerTransport("/messages")
 
 
-@app.get("/mcp/sse")
-async def mcp_sse_endpoint(request: Request):
-    async with sse.connect_sse(
-        request.scope, request.receive, request._send  # type: ignore[arg-type]
-    ) as streams:
-        await mcp_server.run(
-            streams[0], streams[1], mcp_server.create_initialization_options()
-        )
-    return Response()
+async def _mcp_app(scope, receive, send):
+    """Raw ASGI router for MCP endpoints."""
+    if scope["type"] == "lifespan":
+        return
+    # FastAPI mount sets root_path but does NOT strip it from path.
+    # Strip the mount prefix to get the sub-path for routing.
+    root = scope.get("root_path", "")
+    path = scope.get("path", "")
+    sub_path = path[len(root):] if path.startswith(root) else path
+    if sub_path in ("/sse", "/sse/"):
+        async with sse.connect_sse(scope, receive, send) as streams:
+            await mcp_server.run(
+                streams[0], streams[1], mcp_server.create_initialization_options()
+            )
+    elif sub_path.startswith("/messages"):
+        await sse.handle_post_message(scope, receive, send)
+    else:
+        await send({"type": "http.response.start", "status": 404, "headers": []})
+        await send({"type": "http.response.body", "body": b"Not found"})
 
 
-@app.post("/mcp/messages/")
-async def mcp_post_endpoint(request: Request):
-    await sse.handle_post_message(
-        request.scope, request.receive, request._send  # type: ignore[arg-type]
-    )
-    return Response()
+app.mount("/mcp", _mcp_app)
 
 # --- Admin Routes ---
 app.include_router(auth_router)
