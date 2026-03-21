@@ -15,7 +15,7 @@ def test_detects_openai_key():
 
 
 def test_detects_github_pat():
-    payload = {"details": "Token ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh"}
+    payload = {"details": "Token ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij"}
     result = scan_for_secrets(payload)
     assert result.detected is True
 

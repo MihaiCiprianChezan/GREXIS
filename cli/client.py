@@ -78,6 +78,15 @@ class GrexisClient:
         resp.raise_for_status()
         return resp.json()
 
+    async def admin_unban_token(self, token_hash: str, reason: str) -> dict:
+        resp = await self.http.post(
+            f"/admin/tokens/{token_hash}/unban",
+            json={"reason": reason},
+            headers=self._admin_headers,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
     async def admin_get_metrics(self) -> dict:
         resp = await self.http.get("/admin/metrics", headers=self._admin_headers)
         resp.raise_for_status()

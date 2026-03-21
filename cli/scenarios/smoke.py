@@ -1,8 +1,10 @@
-"""Smoke test -- exercises all 5 MCP tools in sequence."""
-import logging
-import uuid
+"""Smoke test -- exercises all 5 MCP tools in a single happy-path sequence.
 
-logger = logging.getLogger(__name__)
+Verifies the basic contract: register -> submit problem -> submit solution
+-> query -> feedback. Every tool must return the expected shape.
+"""
+import uuid
+from reporter import Reporter
 
 TEST_ENV = {
     "framework": "langchain",
@@ -11,7 +13,7 @@ TEST_ENV = {
     "runtime": "python3.12",
 }
 
-TEST_FAILURE_SIG = {
+TEST_FAILURE = {
     "error_type": "ImportError",
     "error_code": "MODULE_NOT_FOUND",
     "tool_name": "python_repl",
@@ -21,124 +23,76 @@ TEST_FAILURE_SIG = {
 }
 
 
-async def run(client, token: str) -> bool:
-    """Run smoke test. Returns True if all steps pass."""
-    results = {"passed": 0, "failed": 0, "errors": []}
+async def run(client, token: str, reporter: Reporter) -> bool:
+    reporter.begin_scenario(
+        "Smoke Test",
+        "Happy path through all 5 MCP tools in sequence",
+    )
 
-    def check(name: str, condition: bool, detail: str = ""):
-        if condition:
-            results["passed"] += 1
-            logger.info("  PASS: %s", name)
-        else:
-            results["failed"] += 1
-            results["errors"].append(f"{name}: {detail}")
-            logger.error("  FAIL: %s -- %s", name, detail)
-
-    logger.info("=== SMOKE TEST ===")
-
-    # Step 1: register_agent
-    logger.info("Step 1: register_agent")
-    try:
-        reg = await client.register_agent(
-            token, description="Smoke test agent", framework="langchain"
-        )
-        check(
-            "register_agent returns registered=True",
-            reg.get("registered") is True,
-            f"got {reg}",
-        )
-    except Exception as e:
-        check("register_agent", False, str(e))
-
-    # Step 2: submit_problem
-    logger.info("Step 2: submit_problem")
     problem_id = None
-    try:
+    solution_id = None
+
+    # 1. Register agent
+    with reporter.step("register_agent returns registered=True") as check:
+        reg = await client.register_agent(
+            token, description="Smoke test agent", framework="langchain",
+        )
+        check(reg.get("registered") is True, f"got {reg}")
+
+    # 2. Submit problem
+    with reporter.step("submit_problem returns problem_id + status=open") as check:
         prob = await client.submit_problem(
             token=token,
-            failure_signature=TEST_FAILURE_SIG,
+            failure_signature=TEST_FAILURE,
             environment=TEST_ENV,
             goal_state="Import numpy but package not installed",
         )
+        problem_id = prob.get("problem_id")
         check(
-            "submit_problem returns problem_id",
-            "problem_id" in prob,
+            problem_id is not None and prob.get("status") == "open",
             f"got {prob}",
         )
-        check(
-            "submit_problem status is open",
-            prob.get("status") == "open",
-            f"got {prob.get('status')}",
-        )
-        problem_id = prob.get("problem_id")
-    except Exception as e:
-        check("submit_problem", False, str(e))
 
-    # Step 3: submit_solution
-    logger.info("Step 3: submit_solution")
-    solution_id = None
-    try:
+    # 3. Submit solution
+    with reporter.step("submit_solution returns solution_id") as check:
         sol = await client.submit_solution(
             token=token,
             problem={
-                "failure_signature": TEST_FAILURE_SIG,
+                "failure_signature": TEST_FAILURE,
                 "goal_state": "Import numpy but package not installed",
                 "environment": TEST_ENV,
                 "problem_id": problem_id,
             },
             resolution={
-                "solution_summary": "Install numpy via pip in the execution environment",
+                "solution_summary": "Install numpy via pip",
                 "solution_steps": [
                     "Run: pip install numpy",
-                    "Retry the import",
-                    "Verify with: python -c 'import numpy; print(numpy.__version__)'",
+                    "Retry the import statement",
+                    "Verify: python -c 'import numpy; print(numpy.__version__)'",
                 ],
                 "confidence": "empirical",
                 "time_to_resolution_ms": 5000,
             },
         )
-        check(
-            "submit_solution returns solution_id",
-            "solution_id" in sol,
-            f"got {sol}",
-        )
         solution_id = sol.get("solution_id")
-    except Exception as e:
-        check("submit_solution", False, str(e))
+        check(solution_id is not None, f"got {sol}")
 
-    # Step 4: query_solutions
-    logger.info("Step 4: query_solutions")
-    try:
-        results_list = await client.query_solutions(
+    # 4. Query solutions
+    with reporter.step("query_solutions finds our solution") as check:
+        results = await client.query_solutions(
             token=token,
-            failure_signature=TEST_FAILURE_SIG,
+            failure_signature=TEST_FAILURE,
             environment=TEST_ENV,
             goal_state="Import numpy but module not found",
         )
-        # query_solutions might return a list or a list wrapped in something
-        if isinstance(results_list, dict):
-            results_list = [results_list]
-        check(
-            "query_solutions returns results",
-            len(results_list) >= 1,
-            f"got {len(results_list)} results",
-        )
-        if results_list and solution_id:
-            found = any(
-                r.get("solution_id") == solution_id for r in results_list
-            )
-            check(
-                "query_solutions finds our solution",
-                found,
-                f"solution {solution_id} not in results",
-            )
-    except Exception as e:
-        check("query_solutions", False, str(e))
+        if isinstance(results, dict):
+            results = [results]
+        found = any(r.get("solution_id") == solution_id for r in results)
+        check(found, f"solution {solution_id} not in {len(results)} results")
 
-    # Step 5: submit_feedback
-    logger.info("Step 5: submit_feedback")
-    if solution_id:
-        try:
+    # 5. Submit feedback
+    with reporter.step("submit_feedback returns feedback_id + confidence > 0") as check:
+        if solution_id:
             fb = await client.submit_feedback(
                 token=token,
                 solution_id=solution_id,
@@ -147,29 +101,11 @@ async def run(client, token: str) -> bool:
                 comment="Worked after installing numpy 1.26.4",
             )
             check(
-                "submit_feedback returns feedback_id",
-                "feedback_id" in fb,
+                "feedback_id" in fb and fb.get("new_confidence_score", 0) > 0,
                 f"got {fb}",
             )
-            check(
-                "submit_feedback has confidence_score > 0",
-                fb.get("new_confidence_score", 0) > 0,
-                f"got {fb.get('new_confidence_score')}",
-            )
-        except Exception as e:
-            check("submit_feedback", False, str(e))
-    else:
-        check(
-            "submit_feedback (skipped, no solution_id)",
-            False,
-            "no solution_id from step 3",
-        )
+        else:
+            check(False, "no solution_id from step 3")
 
-    # Summary
-    total = results["passed"] + results["failed"]
-    logger.info("=== SMOKE TEST RESULTS: %d/%d passed ===", results["passed"], total)
-    if results["errors"]:
-        for err in results["errors"]:
-            logger.error("  - %s", err)
-
-    return results["failed"] == 0
+    result = reporter.end_scenario()
+    return result.all_passed

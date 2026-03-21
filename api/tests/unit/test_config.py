@@ -17,10 +17,13 @@ def test_settings_loads_defaults():
     assert settings.SANDBOX_MODE is False
 
 
-def test_settings_requires_api_secret():
+def test_settings_requires_api_secret(monkeypatch, tmp_path):
+    # Isolate from .env file by pointing env_file to a nonexistent path
+    monkeypatch.delenv("GREXIS_API_SECRET", raising=False)
     with pytest.raises(Exception):
         Settings(
             POSTGRES_URL="postgresql+asyncpg://user:pass@localhost/db",
             QDRANT_URL="http://localhost:6333",
             REDIS_URL="redis://localhost:6379",
+            _env_file=str(tmp_path / "nonexistent.env"),
         )

@@ -15,8 +15,12 @@ async def test_embed_returns_vector():
     service._session = MagicMock()
     service._tokenizer = MagicMock()
 
-    # Mock tokenizer
-    service._tokenizer.return_value = {"input_ids": [[1, 2, 3]], "attention_mask": [[1, 1, 1]]}
+    # Mock tokenizer — must return numpy arrays (like return_tensors="np")
+    import numpy as np
+    service._tokenizer.return_value = {
+        "input_ids": np.array([[1, 2, 3]], dtype=np.int64),
+        "attention_mask": np.array([[1, 1, 1]], dtype=np.int64),
+    }
 
     # Mock ONNX session
     import numpy as np
