@@ -2,7 +2,7 @@
 
 > *from **graph** + **nexis** (Latin: *connection*) — a graph of connections between failures and their resolutions.*
 
-→ [website](https://github.com/MihaiCiprianChezan/GREXIS)
+→ [website](https://mihaiciprianchezan.github.io/GREXIS/)
 
 ---
 
