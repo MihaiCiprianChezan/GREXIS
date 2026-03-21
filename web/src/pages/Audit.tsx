@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import type { AuditEntry } from "@/types/api";
+import { Download } from "lucide-react";
 
 const PER_PAGE = 100;
 
@@ -59,15 +60,31 @@ export function AuditPage() {
     URL.revokeObjectURL(url);
   };
 
+  const actorBadgeClass = (actorType: string) => {
+    if (actorType === "admin") return "bg-info-muted text-info";
+    if (actorType === "agent") return "bg-accent-muted text-accent";
+    return "bg-bg-elevated text-text-muted";
+  };
+
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-        <h1 style={{ margin: 0 }}>Audit Log</h1>
-        <button onClick={exportCsv} style={exportBtnStyle}>Export CSV</button>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-xl font-semibold tracking-tight text-text-primary">Audit Log</h1>
+        <button
+          onClick={exportCsv}
+          className="px-4 py-2 bg-accent text-white rounded-md text-sm font-medium border-none cursor-pointer hover:bg-accent-hover transition-colors flex items-center gap-2"
+        >
+          <Download size={14} />
+          Export CSV
+        </button>
       </div>
 
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "16px" }}>
-        <select value={actorTypeFilter} onChange={(e) => { setActorTypeFilter(e.target.value); setPage(1); }} style={inputStyle}>
+      <div className="flex gap-2 flex-wrap mb-4">
+        <select
+          value={actorTypeFilter}
+          onChange={(e) => { setActorTypeFilter(e.target.value); setPage(1); }}
+          className="bg-bg-base text-text-primary border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+        >
           <option value="">All actors</option>
           <option value="admin">admin</option>
           <option value="agent">agent</option>
@@ -78,52 +95,48 @@ export function AuditPage() {
           placeholder="Filter by action..."
           value={actionFilter}
           onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
-          style={{ ...inputStyle, width: "180px" }}
+          className="bg-bg-base text-text-primary border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent w-44"
         />
       </div>
 
-      {error && <p style={{ color: "#d62828", marginBottom: "12px" }}>{error}</p>}
+      {error && <p className="text-danger mb-3">{error}</p>}
 
-      <div style={{ backgroundColor: "#16213e", border: "1px solid #0f3460", borderRadius: "8px", overflow: "auto", opacity: loading ? 0.6 : 1 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+      <div className={`bg-bg-surface border border-border rounded-lg overflow-auto transition-opacity ${loading ? "opacity-60" : "opacity-100"}`}>
+        <table className="w-full border-collapse text-sm">
           <thead>
-            <tr style={{ backgroundColor: "#0f3460" }}>
-              <th style={thStyle}>Timestamp</th>
-              <th style={thStyle}>Actor</th>
-              <th style={thStyle}>Actor ID</th>
-              <th style={thStyle}>Action</th>
-              <th style={thStyle}>Target</th>
-              <th style={thStyle}>Reason</th>
+            <tr className="bg-bg-elevated">
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Timestamp</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Actor</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Actor ID</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Action</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Target</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Reason</th>
             </tr>
           </thead>
           <tbody>
             {entries.length === 0 && !loading ? (
-              <tr><td colSpan={6} style={{ padding: "24px", textAlign: "center", color: "#888" }}>No entries</td></tr>
+              <tr>
+                <td colSpan={6} className="px-4 py-6 text-center text-text-muted">No entries</td>
+              </tr>
             ) : (
               entries.map((entry) => (
-                <tr key={entry.id} style={{ borderBottom: "1px solid #0f3460" }}>
-                  <td style={{ ...tdStyle, fontSize: "0.8rem", whiteSpace: "nowrap" }}>
+                <tr key={entry.id} className="border-t border-border hover:bg-bg-elevated/50">
+                  <td className="px-4 py-2.5 text-text-secondary text-xs whitespace-nowrap">
                     {new Date(entry.timestamp).toLocaleString()}
                   </td>
-                  <td style={tdStyle}>
-                    <span style={{
-                      padding: "1px 6px",
-                      borderRadius: "8px",
-                      fontSize: "0.7rem",
-                      backgroundColor: entry.actor_type === "admin" ? "#0e4d64" : entry.actor_type === "agent" ? "#1d3557" : "#555",
-                      color: "#e0e0e0",
-                    }}>
+                  <td className="px-4 py-2.5">
+                    <span className={`px-1.5 py-0.5 rounded-full text-[11px] font-medium ${actorBadgeClass(entry.actor_type)}`}>
                       {entry.actor_type}
                     </span>
                   </td>
-                  <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: "0.75rem" }}>
+                  <td className="px-4 py-2.5 text-text-secondary font-mono text-xs">
                     {entry.actor_id_hash.substring(0, 12)}...
                   </td>
-                  <td style={tdStyle}>{entry.action}</td>
-                  <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: "0.75rem" }}>
+                  <td className="px-4 py-2.5 text-text-secondary">{entry.action}</td>
+                  <td className="px-4 py-2.5 text-text-secondary font-mono text-xs">
                     {entry.target_id ? `${entry.target_id.substring(0, 8)}...` : "—"}
                   </td>
-                  <td style={tdStyle}>
+                  <td className="px-4 py-2.5 text-text-secondary">
                     {entry.reason ? (
                       <span>
                         {expandedReasons.has(entry.id)
@@ -134,7 +147,7 @@ export function AuditPage() {
                         {entry.reason.length > 40 && (
                           <button
                             onClick={() => toggleReason(entry.id)}
-                            style={{ background: "none", border: "none", color: "#a8dadc", cursor: "pointer", fontSize: "0.75rem", marginLeft: "4px" }}
+                            className="bg-transparent border-none text-accent cursor-pointer text-xs ml-1 hover:underline"
                           >
                             {expandedReasons.has(entry.id) ? "less" : "more"}
                           </button>
@@ -150,18 +163,24 @@ export function AuditPage() {
       </div>
 
       {totalPages > 1 && (
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "12px", justifyContent: "center" }}>
-          <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} style={pageBtnStyle}>Prev</button>
-          <span style={{ color: "#888", fontSize: "0.85rem" }}>Page {page} of {totalPages} ({total} total)</span>
-          <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={pageBtnStyle}>Next</button>
+        <div className="flex items-center gap-2 mt-3 justify-center">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="bg-transparent text-text-secondary border border-border hover:bg-bg-elevated rounded-md px-4 py-2 text-sm cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Prev
+          </button>
+          <span className="text-text-muted text-sm">Page {page} of {totalPages} ({total} total)</span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="bg-transparent text-text-secondary border border-border hover:bg-bg-elevated rounded-md px-4 py-2 text-sm cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>
   );
 }
-
-const inputStyle: React.CSSProperties = { padding: "6px 10px", backgroundColor: "#1a1a2e", color: "#e0e0e0", border: "1px solid #0f3460", borderRadius: "4px", fontSize: "0.85rem" };
-const thStyle: React.CSSProperties = { textAlign: "left", padding: "8px 12px", fontWeight: 600, color: "#a0a0b8", fontSize: "0.75rem", textTransform: "uppercase", whiteSpace: "nowrap" };
-const tdStyle: React.CSSProperties = { padding: "8px 12px", color: "#ccc" };
-const pageBtnStyle: React.CSSProperties = { padding: "4px 12px", backgroundColor: "#0f3460", color: "#e0e0e0", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.85rem" };
-const exportBtnStyle: React.CSSProperties = { padding: "8px 16px", backgroundColor: "#0f3460", color: "#e0e0e0", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: 600 };

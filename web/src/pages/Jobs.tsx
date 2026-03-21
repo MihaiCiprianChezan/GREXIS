@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/StatusBadge";
 import { usePolling } from "@/hooks/usePolling";
 import type { AgentJob, Metrics } from "@/types/api";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 const PER_PAGE = 50;
 
@@ -49,11 +50,11 @@ export function JobsPage() {
 
   return (
     <div>
-      <h1 style={{ margin: "0 0 16px" }}>Scheduled Agent</h1>
+      <h1 className="text-xl font-semibold tracking-tight text-text-primary mb-4">Scheduled Agent</h1>
 
       {/* Current status */}
       {metrics && (
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", marginBottom: "24px" }}>
+        <div className="flex gap-4 flex-wrap mb-6">
           <StatusCard label="Daily Tokens Used" value={`${metrics.daily_tokens_used} / ${metrics.daily_token_budget}`} />
           <StatusCard label="Problems Attempted Today" value={String(metrics.problems_attempted_today)} />
           <StatusCard label="Problems Solved Today" value={String(metrics.problems_solved_today)} />
@@ -62,8 +63,12 @@ export function JobsPage() {
       )}
 
       {/* Filters */}
-      <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-        <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} style={inputStyle}>
+      <div className="flex gap-2 mb-4">
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+          className="bg-bg-base text-text-primary border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+        >
           <option value="">All statuses</option>
           <option value="queued">queued</option>
           <option value="running">running</option>
@@ -73,78 +78,86 @@ export function JobsPage() {
         </select>
       </div>
 
-      {error && <p style={{ color: "#d62828", marginBottom: "12px" }}>{error}</p>}
+      {error && <p className="text-danger mb-3">{error}</p>}
 
-      <div style={{ backgroundColor: "#16213e", border: "1px solid #0f3460", borderRadius: "8px", overflow: "auto", opacity: loading ? 0.6 : 1 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+      <div className={`bg-bg-surface border border-border rounded-lg overflow-auto transition-opacity ${loading ? "opacity-60" : "opacity-100"}`}>
+        <table className="w-full border-collapse text-sm">
           <thead>
-            <tr style={{ backgroundColor: "#0f3460" }}>
-              <th style={thStyle}></th>
-              <th style={thStyle}>Problem</th>
-              <th style={thStyle}>Status</th>
-              <th style={thStyle}>Today</th>
-              <th style={thStyle}>Total</th>
-              <th style={thStyle}>Tokens</th>
-              <th style={thStyle}>Next Attempt</th>
+            <tr className="bg-bg-elevated">
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left w-8"></th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Problem</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Status</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Today</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Total</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Tokens</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Next Attempt</th>
             </tr>
           </thead>
           <tbody>
             {jobs.length === 0 && !loading ? (
-              <tr><td colSpan={7} style={{ padding: "24px", textAlign: "center", color: "#888" }}>No jobs</td></tr>
+              <tr>
+                <td colSpan={7} className="px-4 py-6 text-center text-text-muted">No jobs</td>
+              </tr>
             ) : (
               jobs.map((job) => (
                 <Fragment key={job.id}>
-                  <tr style={{ borderBottom: "1px solid #0f3460" }}>
-                    <td style={tdStyle}>
+                  <tr className="border-t border-border hover:bg-bg-elevated/50">
+                    <td className="px-4 py-2.5">
                       {job.synthesis_logs && job.synthesis_logs.length > 0 && (
                         <button
                           onClick={() => toggleExpand(job.id)}
-                          style={{ background: "none", border: "none", color: "#a8dadc", cursor: "pointer", fontSize: "0.8rem" }}
+                          className="bg-transparent border-none text-accent cursor-pointer flex items-center p-0"
                         >
-                          {expandedJobs.has(job.id) ? "−" : "+"}
+                          {expandedJobs.has(job.id)
+                            ? <ChevronDown size={14} />
+                            : <ChevronRight size={14} />
+                          }
                         </button>
                       )}
                     </td>
-                    <td style={tdStyle}>
-                      <Link to={`/problems/${job.problem_id}`} style={{ color: "#a8dadc", textDecoration: "none", fontFamily: "monospace", fontSize: "0.8rem" }}>
+                    <td className="px-4 py-2.5">
+                      <Link
+                        to={`/problems/${job.problem_id}`}
+                        className="text-accent no-underline font-mono text-xs hover:underline"
+                      >
                         {job.problem_id.substring(0, 8)}...
                       </Link>
                     </td>
-                    <td style={tdStyle}><StatusBadge status={job.status} /></td>
-                    <td style={{ ...tdStyle, fontFamily: "monospace" }}>{job.attempts_today}</td>
-                    <td style={{ ...tdStyle, fontFamily: "monospace" }}>{job.total_attempts}</td>
-                    <td style={{ ...tdStyle, fontFamily: "monospace" }}>{job.tokens_used_today}</td>
-                    <td style={{ ...tdStyle, fontSize: "0.8rem", color: "#888" }}>
+                    <td className="px-4 py-2.5 text-text-secondary"><StatusBadge status={job.status} /></td>
+                    <td className="px-4 py-2.5 text-text-secondary font-mono">{job.attempts_today}</td>
+                    <td className="px-4 py-2.5 text-text-secondary font-mono">{job.total_attempts}</td>
+                    <td className="px-4 py-2.5 text-text-secondary font-mono">{job.tokens_used_today}</td>
+                    <td className="px-4 py-2.5 text-text-muted text-xs">
                       {job.next_attempt_after ? new Date(job.next_attempt_after).toLocaleString() : "—"}
                     </td>
                   </tr>
                   {expandedJobs.has(job.id) && job.synthesis_logs && (
                     <tr key={`logs-${job.id}`}>
-                      <td colSpan={7} style={{ padding: "8px 12px 16px 40px", backgroundColor: "#1a1a2e" }}>
+                      <td colSpan={7} className="px-4 pb-4 pt-2 pl-10 bg-bg-base">
                         {job.synthesis_logs.map((log, i) => (
-                          <div key={i} style={{ borderLeft: "2px solid #0f3460", paddingLeft: "12px", marginBottom: "8px" }}>
-                            <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "2px" }}>
-                              <span style={{ color: "#a0a0b8", fontSize: "0.75rem", fontWeight: 600 }}>
+                          <div key={i} className="border-l-2 border-border pl-3 mb-2">
+                            <div className="flex gap-2 items-center mb-0.5">
+                              <span className="text-text-muted text-[11px] font-semibold uppercase tracking-wide">
                                 Attempt {log.attempt_number}
                               </span>
-                              <span style={{
-                                padding: "1px 6px",
-                                borderRadius: "8px",
-                                fontSize: "0.7rem",
-                                backgroundColor: log.outcome === "success" ? "#2d6a4f" : log.outcome === "failed" ? "#d62828" : "#555",
-                                color: "#fff",
-                              }}>
+                              <span className={`px-1.5 py-0.5 rounded-full text-[11px] font-medium text-white ${
+                                log.outcome === "success"
+                                  ? "bg-success"
+                                  : log.outcome === "failed"
+                                    ? "bg-danger"
+                                    : "bg-bg-elevated text-text-muted"
+                              }`}>
                                 {log.outcome}
                               </span>
-                              <span style={{ color: "#888", fontSize: "0.7rem" }}>
+                              <span className="text-text-muted text-[11px]">
                                 {log.tokens_used} tokens
                               </span>
                             </div>
-                            <p style={{ margin: "2px 0", color: "#ccc", fontSize: "0.8rem" }}>
+                            <p className="my-0.5 text-text-secondary text-xs">
                               {log.reasoning_summary}
                             </p>
                             {log.sources_used.length > 0 && (
-                              <p style={{ margin: "2px 0 0", color: "#888", fontSize: "0.7rem" }}>
+                              <p className="mt-0.5 text-text-muted text-[11px]">
                                 Sources: {log.sources_used.join(", ")}
                               </p>
                             )}
@@ -161,10 +174,22 @@ export function JobsPage() {
       </div>
 
       {totalPages > 1 && (
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "12px", justifyContent: "center" }}>
-          <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} style={pageBtnStyle}>Prev</button>
-          <span style={{ color: "#888", fontSize: "0.85rem" }}>Page {page} of {totalPages}</span>
-          <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={pageBtnStyle}>Next</button>
+        <div className="flex items-center gap-2 mt-3 justify-center">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="bg-transparent text-text-secondary border border-border hover:bg-bg-elevated rounded-md px-4 py-2 text-sm cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Prev
+          </button>
+          <span className="text-text-muted text-sm">Page {page} of {totalPages}</span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="bg-transparent text-text-secondary border border-border hover:bg-bg-elevated rounded-md px-4 py-2 text-sm cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>
@@ -173,14 +198,9 @@ export function JobsPage() {
 
 function StatusCard({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ backgroundColor: "#16213e", border: "1px solid #0f3460", borderRadius: "8px", padding: "12px 16px", flex: "1 1 160px" }}>
-      <p style={{ color: "#888", fontSize: "0.75rem", textTransform: "uppercase", margin: "0 0 4px" }}>{label}</p>
-      <p style={{ color: "#e0e0e0", fontSize: "1.2rem", fontFamily: "monospace", fontWeight: 700, margin: 0 }}>{value}</p>
+    <div className="bg-bg-surface border border-border rounded-lg px-4 py-3 flex-1 min-w-40">
+      <p className="text-text-muted text-[11px] uppercase tracking-wide mb-1">{label}</p>
+      <p className="text-text-primary text-[28px] font-semibold tracking-tight font-mono leading-none">{value}</p>
     </div>
   );
 }
-
-const inputStyle: React.CSSProperties = { padding: "6px 10px", backgroundColor: "#1a1a2e", color: "#e0e0e0", border: "1px solid #0f3460", borderRadius: "4px", fontSize: "0.85rem" };
-const thStyle: React.CSSProperties = { textAlign: "left", padding: "8px 12px", fontWeight: 600, color: "#a0a0b8", fontSize: "0.75rem", textTransform: "uppercase", whiteSpace: "nowrap" };
-const tdStyle: React.CSSProperties = { padding: "8px 12px", color: "#ccc" };
-const pageBtnStyle: React.CSSProperties = { padding: "4px 12px", backgroundColor: "#0f3460", color: "#e0e0e0", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.85rem" };

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/StatusBadge";
 import { SourceBadge } from "@/components/SourceBadge";
@@ -85,8 +86,12 @@ export function SolutionDetailPage() {
   if (loading) {
     return (
       <div>
-        <h1 style={{ margin: "0 0 16px" }}>Solution Detail</h1>
-        <p style={{ color: "#888" }}>Loading...</p>
+        <h1 className="text-xl font-semibold tracking-tight mb-4">Solution Detail</h1>
+        <div className="flex flex-col gap-3">
+          <div className="skeleton h-8 rounded-lg" />
+          <div className="skeleton h-[120px] rounded-lg" />
+          <div className="skeleton h-[200px] rounded-lg" />
+        </div>
       </div>
     );
   }
@@ -94,9 +99,12 @@ export function SolutionDetailPage() {
   if (error || !solution) {
     return (
       <div>
-        <h1 style={{ margin: "0 0 16px" }}>Solution Detail</h1>
-        <p style={{ color: "#d62828" }}>{error || "Not found"}</p>
-        <Link to="/solutions" style={{ color: "#a8dadc" }}>Back to solutions</Link>
+        <h1 className="text-xl font-semibold tracking-tight mb-4">Solution Detail</h1>
+        <p className="text-danger mb-3">{error || "Not found"}</p>
+        <Link to="/solutions" className="text-accent hover:text-accent-hover no-underline text-sm flex items-center gap-1">
+          <ArrowLeft className="size-3.5" />
+          Back to solutions
+        </Link>
       </div>
     );
   }
@@ -110,29 +118,30 @@ export function SolutionDetailPage() {
 
   return (
     <div>
-      <Link to="/solutions" style={{ color: "#a8dadc", textDecoration: "none", fontSize: "0.85rem" }}>
-        &larr; Solutions
+      <Link to="/solutions" className="text-accent hover:text-accent-hover no-underline text-sm flex items-center gap-1 w-fit">
+        <ArrowLeft className="size-3.5" />
+        Solutions
       </Link>
 
       {toast && (
-        <div style={{ position: "fixed", top: "16px", right: "16px", backgroundColor: "#2d6a4f", color: "#fff", padding: "10px 20px", borderRadius: "6px", zIndex: 999 }}>
+        <div className="fixed top-4 right-4 bg-success text-white px-5 py-2.5 rounded-md z-[999] shadow-lg text-sm font-medium">
           {toast}
         </div>
       )}
 
       {/* Header */}
-      <div style={{ margin: "16px 0", display: "flex", gap: "12px", alignItems: "flex-start", flexWrap: "wrap" }}>
-        <h1 style={{ margin: 0, fontSize: "1.3rem", flex: "1 1 400px" }}>{solution.solution_summary}</h1>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+      <div className="my-4 flex gap-3 items-start flex-wrap">
+        <h1 className="text-xl font-semibold tracking-tight flex-[1_1_400px] m-0">{solution.solution_summary}</h1>
+        <div className="flex gap-2 items-center">
           <StatusBadge status={solution.status} />
           <SourceBadge source={solution.source} />
           {solution.severity && <SeverityBadge severity={solution.severity} />}
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+      <div className="flex gap-6 flex-wrap">
         {/* Main content */}
-        <div style={{ flex: "2 1 500px" }}>
+        <div className="flex-[2_1_500px] min-w-0">
           {/* Failure signature */}
           <Section title="Failure Signature">
             <KV label="Error Type" value={solution.error_type} />
@@ -152,12 +161,12 @@ export function SolutionDetailPage() {
 
           {/* Resolution steps */}
           <Section title="Resolution Steps">
-            <p style={{ color: "#888", fontSize: "0.8rem", margin: "0 0 8px" }}>
-              Confidence type: <span style={{ fontFamily: "monospace" }}>{solution.confidence_type}</span>
+            <p className="text-text-muted text-xs mb-2 m-0">
+              Confidence type: <span className="font-mono">{solution.confidence_type}</span>
             </p>
-            <ol style={{ margin: 0, paddingLeft: "20px" }}>
+            <ol className="m-0 pl-5">
               {solution.solution_steps.map((step, i) => (
-                <li key={i} style={{ marginBottom: "8px", color: "#ccc", lineHeight: 1.5 }}>
+                <li key={i} className="mb-2 text-text-secondary leading-relaxed text-sm">
                   {step}
                 </li>
               ))}
@@ -166,7 +175,7 @@ export function SolutionDetailPage() {
 
           {/* Trust score breakdown */}
           <Section title="Trust Score">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+            <div className="grid grid-cols-2 gap-2">
               <KV label="Confidence Score" value={solution.confidence_score.toFixed(3)} mono />
               <KV label="Success Rate" value={`${(solution.success_rate * 100).toFixed(1)}%`} mono />
               <KV label="Attempt Count" value={String(solution.attempt_count)} mono />
@@ -178,28 +187,28 @@ export function SolutionDetailPage() {
           {/* Feedback history */}
           <Section title="Feedback History">
             {(solution.feedback_history?.length ?? 0) === 0 ? (
-              <p style={{ color: "#888", margin: 0, fontSize: "0.85rem" }}>No feedback events</p>
+              <p className="text-text-muted m-0 text-sm">No feedback events</p>
             ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8rem" }}>
+              <table className="w-full border-collapse text-sm">
                 <thead>
-                  <tr>
-                    <th style={thSmall}>Time</th>
-                    <th style={thSmall}>Outcome</th>
-                    <th style={thSmall}>Framework</th>
-                    <th style={thSmall}>Comment</th>
+                  <tr className="bg-bg-elevated">
+                    <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-3 py-2 text-left border-b border-border">Time</th>
+                    <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-3 py-2 text-left border-b border-border">Outcome</th>
+                    <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-3 py-2 text-left border-b border-border">Framework</th>
+                    <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-3 py-2 text-left border-b border-border">Comment</th>
                   </tr>
                 </thead>
                 <tbody>
                   {solution.feedback_history.map((fb) => (
-                    <tr key={fb.id} style={{ borderBottom: "1px solid #0f3460" }}>
-                      <td style={tdSmall}>{new Date(fb.created_at).toLocaleString()}</td>
-                      <td style={tdSmall}>
-                        <span style={{ color: fb.outcome === "success" ? "#2d6a4f" : "#d62828" }}>
+                    <tr key={fb.id} className="border-t border-border hover:bg-bg-elevated/50">
+                      <td className="px-3 py-2 text-text-secondary text-xs">{new Date(fb.created_at).toLocaleString()}</td>
+                      <td className="px-3 py-2 text-xs">
+                        <span className={fb.outcome === "success" ? "text-success" : "text-danger"}>
                           {fb.outcome}
                         </span>
                       </td>
-                      <td style={tdSmall}>{fb.framework} {fb.framework_version}</td>
-                      <td style={tdSmall}>{fb.comment || "—"}</td>
+                      <td className="px-3 py-2 text-text-secondary text-xs">{fb.framework} {fb.framework_version}</td>
+                      <td className="px-3 py-2 text-text-secondary text-xs">{fb.comment || "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -210,16 +219,16 @@ export function SolutionDetailPage() {
           {/* Graph edges */}
           <Section title="Graph Edges">
             {(solution.edges?.length ?? 0) === 0 ? (
-              <p style={{ color: "#888", margin: 0, fontSize: "0.85rem" }}>No edges</p>
+              <p className="text-text-muted m-0 text-sm">No edges</p>
             ) : (
-              <ul style={{ margin: 0, paddingLeft: "16px" }}>
+              <ul className="m-0 pl-4 list-disc">
                 {solution.edges.map((edge) => (
-                  <li key={edge.id} style={{ color: "#ccc", fontSize: "0.85rem", marginBottom: "4px" }}>
-                    <span style={{ fontFamily: "monospace", color: "#a8dadc" }}>{edge.edge_type}</span>
+                  <li key={edge.id} className="text-text-secondary text-sm mb-1">
+                    <span className="font-mono text-accent">{edge.edge_type}</span>
                     {" → "}
                     <Link
                       to={edge.target_node_type === "solution" ? `/solutions/${edge.target_node_id}` : `/problems/${edge.target_node_id}`}
-                      style={{ color: "#a8dadc", textDecoration: "none" }}
+                      className="text-accent hover:text-accent-hover no-underline"
                     >
                       {edge.target_node_type}:{edge.target_node_id.substring(0, 8)}
                     </Link>
@@ -232,7 +241,7 @@ export function SolutionDetailPage() {
           {/* Provenance */}
           {solution.provenance && (
             <Section title="Provenance">
-              <p style={{ color: "#ccc", margin: 0, fontSize: "0.85rem", fontFamily: "monospace", wordBreak: "break-all" }}>
+              <p className="text-text-secondary m-0 text-sm font-mono break-all">
                 {solution.provenance}
               </p>
             </Section>
@@ -244,24 +253,13 @@ export function SolutionDetailPage() {
               value={adminNotes}
               onChange={(e) => setAdminNotes(e.target.value)}
               rows={4}
-              style={{
-                width: "100%",
-                boxSizing: "border-box",
-                backgroundColor: "#1a1a2e",
-                color: "#e0e0e0",
-                border: "1px solid #0f3460",
-                borderRadius: "4px",
-                padding: "8px",
-                fontFamily: "inherit",
-                fontSize: "0.85rem",
-                resize: "vertical",
-              }}
+              className="w-full bg-bg-base text-text-primary border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent resize-y font-sans"
               placeholder="Internal notes (not returned to agents)..."
             />
             <button
               onClick={saveNotes}
               disabled={savingNotes}
-              style={{ ...actionBtn, backgroundColor: "#0f3460", marginTop: "8px" }}
+              className="mt-2 px-4 py-2 rounded-md text-sm font-medium border-none cursor-pointer transition-colors bg-transparent text-text-secondary border border-border hover:bg-bg-elevated disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {savingNotes ? "Saving..." : "Save Notes"}
             </button>
@@ -269,26 +267,38 @@ export function SolutionDetailPage() {
         </div>
 
         {/* Action panel */}
-        <div style={{ flex: "1 1 200px", minWidth: "200px" }}>
-          <div style={{ position: "sticky", top: "24px" }}>
+        <div className="flex-[1_1_200px] min-w-[200px]">
+          <div className="sticky top-6">
             <Section title="Actions">
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <button onClick={() => setModalAction("approve")} style={{ ...actionBtn, backgroundColor: "#2d6a4f" }}>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => setModalAction("approve")}
+                  className="px-4 py-2 rounded-md text-sm font-semibold border-none cursor-pointer transition-colors bg-success text-white hover:brightness-110"
+                >
                   Promote to curated
                 </button>
-                <button onClick={() => setModalAction("reject")} style={{ ...actionBtn, backgroundColor: "#e09f3e", color: "#1a1a2e" }}>
+                <button
+                  onClick={() => setModalAction("reject")}
+                  className="px-4 py-2 rounded-md text-sm font-semibold border-none cursor-pointer transition-colors bg-warning text-bg-base hover:brightness-110"
+                >
                   Flag for review
                 </button>
-                <button onClick={() => setModalAction("supersede")} style={{ ...actionBtn, backgroundColor: "#555" }}>
+                <button
+                  onClick={() => setModalAction("supersede")}
+                  className="px-4 py-2 rounded-md text-sm font-semibold border-none cursor-pointer transition-colors bg-transparent text-text-secondary border border-border hover:bg-bg-elevated"
+                >
                   Supersede
                 </button>
-                <button onClick={() => setModalAction("delete")} style={{ ...actionBtn, backgroundColor: "#d62828" }}>
+                <button
+                  onClick={() => setModalAction("delete")}
+                  className="px-4 py-2 rounded-md text-sm font-semibold border-none cursor-pointer transition-colors bg-danger text-white hover:brightness-110"
+                >
                   Remove
                 </button>
                 {solution.agent_token_hash && (
                   <Link
                     to={`/agents/${solution.agent_token_hash}`}
-                    style={{ ...actionBtn, backgroundColor: "#1d3557", textAlign: "center", textDecoration: "none", display: "block" }}
+                    className="px-4 py-2 rounded-md text-sm font-semibold text-center no-underline transition-colors bg-transparent text-text-secondary border border-border hover:bg-bg-elevated block"
                   >
                     View agent token
                   </Link>
@@ -315,8 +325,8 @@ export function SolutionDetailPage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ backgroundColor: "#16213e", border: "1px solid #0f3460", borderRadius: "8px", padding: "16px", marginBottom: "16px" }}>
-      <h3 style={{ margin: "0 0 12px", fontSize: "0.9rem", color: "#a0a0b8", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+    <div className="bg-bg-surface border border-border rounded-lg p-4 mb-4">
+      <h3 className="m-0 mb-3 text-sm font-semibold text-text-secondary uppercase tracking-wide">
         {title}
       </h3>
       {children}
@@ -326,36 +336,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function KV({ label, value, mono }: { label: string; value: string | null; mono?: boolean }) {
   return (
-    <div style={{ marginBottom: "6px" }}>
-      <span style={{ color: "#888", fontSize: "0.8rem" }}>{label}: </span>
-      <span style={{ color: "#ccc", fontSize: "0.85rem", fontFamily: mono ? "monospace" : "inherit" }}>
+    <div className="mb-1.5">
+      <span className="text-text-muted text-xs">{label}: </span>
+      <span className={`text-text-secondary text-sm ${mono ? "font-mono" : ""}`}>
         {value || "—"}
       </span>
     </div>
   );
 }
-
-const thSmall: React.CSSProperties = {
-  textAlign: "left",
-  padding: "6px 8px",
-  fontWeight: 600,
-  color: "#a0a0b8",
-  fontSize: "0.7rem",
-  textTransform: "uppercase",
-  borderBottom: "1px solid #0f3460",
-};
-
-const tdSmall: React.CSSProperties = {
-  padding: "6px 8px",
-  color: "#ccc",
-};
-
-const actionBtn: React.CSSProperties = {
-  padding: "8px 16px",
-  color: "#e0e0e0",
-  border: "none",
-  borderRadius: "4px",
-  cursor: "pointer",
-  fontSize: "0.85rem",
-  fontWeight: 600,
-};

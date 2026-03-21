@@ -1,7 +1,10 @@
 from grexis.services.tokens import resolve_agent_token
 from grexis.services.edges import create_edge
-from grexis.services.trust import compute_confidence_score, handle_consecutive_failures
+from grexis.services.trust import compute_base_score, compute_delta_sum
+from grexis.services.rate_limit import check_submission_rate
 from grexis.lib.audit import log_to_audit
+
+_CONSECUTIVE_FAILURE_THRESHOLD = 5
 
 
 async def handle_submit_feedback(
@@ -13,6 +16,10 @@ async def handle_submit_feedback(
     comment: str | None = None,
 ) -> dict:
     token = await resolve_agent_token(deps.postgres, deps.redis, agent_token)
+
+    tier = token.tier if token else "anonymous"
+    if not await check_submission_rate(deps.redis, deps.postgres, tier, token.hash if token else None):
+        return {"error": "RATE_LIMITED", "retry_after_seconds": 3600}
 
     # Create feedback event
     record = await deps.postgres.fetchrow("""
@@ -37,18 +44,60 @@ async def handle_submit_feedback(
             "UPDATE grexis.solutions SET last_validated_at = NOW() WHERE id = $1", solution_id
         )
 
-    # Recompute trust score
-    solution = await deps.postgres.fetchrow("SELECT * FROM grexis.solutions WHERE id = $1", solution_id)
+    # Recompute trust score — inline simplified formula (decay/diversity/age
+    # are handled by the scheduled decay job every 6 hours)
     feedbacks = await deps.postgres.fetch(
         "SELECT outcome FROM grexis.feedback_events WHERE solution_id = $1", solution_id
     )
-    new_score = await compute_confidence_score(solution, feedbacks, deps.redis, deps.config)
+
+    # Resolve tier from agent_tokens table, fall back to 'anonymous'
+    tier = "anonymous"
+    if token and token.hash:
+        tier_row = await deps.postgres.fetchrow(
+            "SELECT tier FROM grexis.agent_tokens WHERE token_hash = $1", token.hash
+        )
+        if tier_row and tier_row["tier"]:
+            tier = tier_row["tier"]
+
+    base = compute_base_score(tier)
+    delta_sum = compute_delta_sum([row["outcome"] for row in feedbacks])
+    new_score = max(0.0, min(1.0, base + delta_sum))
+
     await deps.postgres.execute(
         "UPDATE grexis.solutions SET confidence_score = $1 WHERE id = $2", new_score, solution_id
     )
 
-    # Check consecutive failures
-    await handle_consecutive_failures(deps.postgres, deps.redis, solution_id, deps.config)
+    # Inline consecutive-failure check (threshold = 5)
+    recent_feedbacks = await deps.postgres.fetch(
+        """
+        SELECT outcome FROM grexis.feedback_events
+        WHERE solution_id = $1
+        ORDER BY created_at DESC
+        LIMIT 10
+        """,
+        solution_id,
+    )
+    consecutive_failures = 0
+    for row in recent_feedbacks:
+        if row["outcome"] == "failure":
+            consecutive_failures += 1
+        else:
+            break
+
+    if consecutive_failures >= _CONSECUTIVE_FAILURE_THRESHOLD:
+        await deps.postgres.execute(
+            "UPDATE grexis.solutions SET status = 'flagged' WHERE id = $1",
+            solution_id,
+        )
+        await deps.postgres.execute(
+            """
+            UPDATE grexis.solutions
+            SET confidence_score = GREATEST(0.0, confidence_score - 0.5)
+            WHERE id = $1
+            """,
+            solution_id,
+        )
+        await deps.redis.client.delete(f"diversity:{solution_id}")
 
     await log_to_audit(deps.postgres, "agent", token.hash if token else "anonymous", "submit_feedback", target_id=solution_id)
     return {"feedback_id": feedback_id, "new_confidence_score": new_score}

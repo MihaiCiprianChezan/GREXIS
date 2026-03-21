@@ -41,39 +41,28 @@ export function MetricsPage() {
 
   return (
     <div>
-      <h1 style={{ margin: "0 0 16px" }}>Metrics</h1>
+      <h1 className="text-xl font-semibold tracking-tight text-text-primary mb-4">Metrics</h1>
 
-      {loading && <p style={{ color: "#888" }}>Loading...</p>}
-      {error && <p style={{ color: "#d62828" }}>{error}</p>}
+      {loading && (
+        <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="skeleton h-[88px] rounded-lg" />
+          ))}
+        </div>
+      )}
+      {error && <p className="text-danger">{error}</p>}
 
       {metrics && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "16px" }}>
+        <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
           {METRIC_DEFS.map((def) => (
             <div
               key={def.key}
-              style={{
-                backgroundColor: "#16213e",
-                border: "1px solid #0f3460",
-                borderRadius: "8px",
-                padding: "16px 20px",
-              }}
+              className="bg-bg-surface border border-border rounded-lg p-5"
             >
-              <p style={{
-                color: "#888",
-                fontSize: "0.75rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
-                margin: "0 0 6px",
-              }}>
+              <p className="text-sm font-semibold text-text-secondary uppercase tracking-wide mb-1.5">
                 {def.label}
               </p>
-              <p style={{
-                fontSize: "1.6rem",
-                fontWeight: 700,
-                fontFamily: "monospace",
-                color: "#e0e0e0",
-                margin: 0,
-              }}>
+              <p className="text-[28px] font-semibold tracking-tight font-mono text-text-primary leading-none">
                 {def.format(metrics[def.key])}
               </p>
             </div>
@@ -81,7 +70,7 @@ export function MetricsPage() {
         </div>
       )}
 
-      <p style={{ color: "#555", fontSize: "0.8rem", marginTop: "24px" }}>
+      <p className="text-text-muted text-xs mt-6">
         Trends vs. 24h ago will be available in v0.2. For detailed graphs, use Grafana if configured.
       </p>
     </div>

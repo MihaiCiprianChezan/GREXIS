@@ -26,6 +26,7 @@ def register_jobs() -> None:
     from grexis.scheduler.diversity import recompute_diversity_factors
     from grexis.scheduler.clustering import run_clustering_job
     from grexis.scheduler.aggregation import aggregate_old_feedback
+    from grexis.scheduler.pending_index import retry_pending_indexes
 
     scheduler.add_job(
         attempt_open_problems, "interval", minutes=30, id="answer_agent",
@@ -41,6 +42,9 @@ def register_jobs() -> None:
     )
     scheduler.add_job(
         aggregate_old_feedback, "cron", hour=3, minute=0, id="aggregation",
+    )
+    scheduler.add_job(
+        retry_pending_indexes, "interval", minutes=5, id="pending_index_retry",
     )
 
     # Sandbox purge — only active when SANDBOX_MODE=true

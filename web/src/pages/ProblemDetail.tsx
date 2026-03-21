@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, AlertTriangle, ChevronUp, ChevronDown, X, Plus } from "lucide-react";
 import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/StatusBadge";
 import { SeverityBadge } from "@/components/SeverityBadge";
@@ -73,15 +74,27 @@ export function ProblemDetailPage() {
   };
 
   if (loading) {
-    return <div><h1 style={{ margin: "0 0 16px" }}>Problem Detail</h1><p style={{ color: "#888" }}>Loading...</p></div>;
+    return (
+      <div>
+        <h1 className="text-xl font-semibold tracking-tight mb-4">Problem Detail</h1>
+        <div className="space-y-3">
+          <div className="skeleton h-[120px] rounded-lg" />
+          <div className="skeleton h-[80px] rounded-lg" />
+          <div className="skeleton h-[160px] rounded-lg" />
+        </div>
+      </div>
+    );
   }
 
   if (error && !problem) {
     return (
       <div>
-        <h1 style={{ margin: "0 0 16px" }}>Problem Detail</h1>
-        <p style={{ color: "#d62828" }}>{error}</p>
-        <Link to="/problems" style={{ color: "#a8dadc" }}>Back to problems</Link>
+        <h1 className="text-xl font-semibold tracking-tight mb-4">Problem Detail</h1>
+        <div className="flex items-center gap-2 text-danger text-sm mb-3">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+        <Link to="/problems" className="text-accent hover:underline text-sm">Back to problems</Link>
       </div>
     );
   }
@@ -92,19 +105,27 @@ export function ProblemDetailPage() {
 
   return (
     <div>
-      <Link to="/problems" style={{ color: "#a8dadc", textDecoration: "none", fontSize: "0.85rem" }}>&larr; Problems</Link>
+      <Link to="/problems" className="inline-flex items-center gap-1 text-accent hover:underline text-sm">
+        <ArrowLeft className="w-3.5 h-3.5" />
+        Problems
+      </Link>
 
       {/* Header */}
-      <div style={{ margin: "16px 0", display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
-        <h1 style={{ margin: 0, fontSize: "1.3rem" }}>{problem.error_type}</h1>
+      <div className="my-4 flex gap-3 items-center flex-wrap">
+        <h1 className="text-xl font-semibold tracking-tight m-0">{problem.error_type}</h1>
         <SeverityBadge severity={problem.severity} />
         <StatusBadge status={problem.status} />
-        <span style={{ color: "#888", fontSize: "0.85rem" }}>
+        <span className="text-text-muted text-sm">
           {problem.duplicate_count} duplicate{problem.duplicate_count !== 1 ? "s" : ""}
         </span>
       </div>
 
-      {error && <p style={{ color: "#d62828", marginBottom: "12px" }}>{error}</p>}
+      {error && (
+        <div className="flex items-center gap-2 text-danger text-sm mb-3">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
 
       {/* Failure signature */}
       <Section title="Failure Signature">
@@ -116,7 +137,7 @@ export function ProblemDetailPage() {
 
       {/* Goal state */}
       <Section title="Goal State">
-        <p style={{ color: "#ccc", margin: 0, whiteSpace: "pre-wrap" }}>{problem.goal_state}</p>
+        <p className="text-text-secondary m-0 whitespace-pre-wrap">{problem.goal_state}</p>
       </Section>
 
       {/* Environment */}
@@ -129,7 +150,7 @@ export function ProblemDetailPage() {
       {/* Execution context */}
       {problem.execution_context && (
         <Section title="Execution Context">
-          <pre style={{ margin: 0, fontFamily: "monospace", fontSize: "0.8rem", color: "#ccc", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
+          <pre className="m-0 font-mono text-xs text-text-secondary whitespace-pre-wrap break-all">
             {JSON.stringify(problem.execution_context, null, 2)}
           </pre>
         </Section>
@@ -138,26 +159,26 @@ export function ProblemDetailPage() {
       {/* Existing solutions */}
       <Section title="Existing Solutions">
         {(!problem.solutions || problem.solutions.length === 0) ? (
-          <p style={{ color: "#888", margin: 0, fontSize: "0.85rem" }}>No linked solutions</p>
+          <p className="text-text-muted m-0 text-sm">No linked solutions</p>
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8rem" }}>
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr>
-                <th style={thSmall}>Summary</th>
-                <th style={thSmall}>Confidence</th>
-                <th style={thSmall}>Status</th>
+              <tr className="bg-bg-elevated">
+                <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left">Summary</th>
+                <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left">Confidence</th>
+                <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left">Status</th>
               </tr>
             </thead>
             <tbody>
               {problem.solutions.map((sol) => (
-                <tr key={sol.id} style={{ borderBottom: "1px solid #0f3460" }}>
-                  <td style={tdSmall}>
-                    <Link to={`/solutions/${sol.id}`} style={{ color: "#a8dadc", textDecoration: "none" }}>
+                <tr key={sol.id} className="border-t border-border hover:bg-bg-elevated/50">
+                  <td className="px-4 py-2.5 text-text-secondary">
+                    <Link to={`/solutions/${sol.id}`} className="text-accent hover:underline">
                       {sol.solution_summary.substring(0, 60)}
                     </Link>
                   </td>
-                  <td style={{ ...tdSmall, fontFamily: "monospace" }}>{sol.confidence_score.toFixed(2)}</td>
-                  <td style={tdSmall}><StatusBadge status={sol.status} /></td>
+                  <td className="px-4 py-2.5 text-text-secondary font-mono">{sol.confidence_score.toFixed(2)}</td>
+                  <td className="px-4 py-2.5 text-text-secondary"><StatusBadge status={sol.status} /></td>
                 </tr>
               ))}
             </tbody>
@@ -168,24 +189,24 @@ export function ProblemDetailPage() {
       {/* Scheduled agent attempts */}
       <Section title="Scheduled Agent Attempts">
         {(!problem.jobs || problem.jobs.length === 0) ? (
-          <p style={{ color: "#888", margin: 0, fontSize: "0.85rem" }}>No agent attempts</p>
+          <p className="text-text-muted m-0 text-sm">No agent attempts</p>
         ) : (
           problem.jobs.map((job) => (
-            <div key={job.id} style={{ marginBottom: "12px" }}>
-              <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "6px" }}>
+            <div key={job.id} className="mb-3">
+              <div className="flex gap-2 items-center mb-1.5">
                 <StatusBadge status={job.status} />
-                <span style={{ color: "#888", fontSize: "0.8rem" }}>
+                <span className="text-text-muted text-xs">
                   {job.total_attempts} attempts, {job.tokens_used_today} tokens today
                 </span>
               </div>
               {job.synthesis_logs?.map((log, i) => (
-                <div key={i} style={{ paddingLeft: "16px", borderLeft: "2px solid #0f3460", marginBottom: "6px" }}>
-                  <p style={{ margin: "0 0 2px", color: "#a0a0b8", fontSize: "0.75rem" }}>
+                <div key={i} className="pl-4 border-l-2 border-border mb-1.5">
+                  <p className="m-0 mb-0.5 text-text-muted text-[11px]">
                     Attempt {log.attempt_number} — {log.outcome} ({log.tokens_used} tokens)
                   </p>
-                  <p style={{ margin: 0, color: "#ccc", fontSize: "0.8rem" }}>{log.reasoning_summary}</p>
+                  <p className="m-0 text-text-secondary text-xs">{log.reasoning_summary}</p>
                   {log.sources_used.length > 0 && (
-                    <p style={{ margin: "2px 0 0", color: "#888", fontSize: "0.75rem" }}>
+                    <p className="m-0 mt-0.5 text-text-muted text-[11px]">
                       Sources: {log.sources_used.join(", ")}
                     </p>
                   )}
@@ -196,65 +217,93 @@ export function ProblemDetailPage() {
         )}
       </Section>
 
-      {/* Manual resolve */}
+      {/* Manual resolve trigger */}
       {!hasGoodSolutions && problem.status === "open" && !showResolve && (
         <button
           onClick={() => setShowResolve(true)}
-          style={{ padding: "10px 20px", backgroundColor: "#2d6a4f", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: 600, fontSize: "0.9rem" }}
+          className="px-4 py-2 bg-accent text-white rounded-md text-sm font-medium border-none cursor-pointer hover:bg-accent-hover transition-colors"
         >
           Resolve manually
         </button>
       )}
 
+      {/* Manual resolution form */}
       {showResolve && (
         <Section title="Manual Resolution">
-          <label style={labelStyle}>Solution Summary</label>
+          <label className="block text-text-muted text-xs mb-1">Solution Summary</label>
           <textarea
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
             rows={2}
-            style={textareaStyle}
+            className="bg-bg-base text-text-primary border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent w-full box-border resize-y font-inherit"
             placeholder="Brief summary of the solution..."
           />
 
-          <label style={{ ...labelStyle, marginTop: "12px" }}>Solution Steps</label>
+          <label className="block text-text-muted text-xs mb-1 mt-3">Solution Steps</label>
           {steps.map((step, i) => (
-            <div key={i} style={{ display: "flex", gap: "8px", marginBottom: "6px", alignItems: "center" }}>
-              <span style={{ color: "#888", fontSize: "0.8rem", minWidth: "20px" }}>{i + 1}.</span>
+            <div key={i} className="flex gap-2 mb-1.5 items-center">
+              <span className="text-text-muted text-xs min-w-[20px]">{i + 1}.</span>
               <input
                 type="text"
                 value={step}
                 onChange={(e) => updateStep(i, e.target.value)}
-                style={{ ...inputStyle, flex: 1 }}
+                className="bg-bg-base text-text-primary border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent flex-1"
                 placeholder={`Step ${i + 1}...`}
               />
-              <button onClick={() => moveStep(i, -1)} disabled={i === 0} style={smallBtn} title="Move up">&uarr;</button>
-              <button onClick={() => moveStep(i, 1)} disabled={i === steps.length - 1} style={smallBtn} title="Move down">&darr;</button>
-              <button onClick={() => removeStep(i)} disabled={steps.length <= 1} style={{ ...smallBtn, color: "#d62828" }} title="Remove">x</button>
+              <button
+                onClick={() => moveStep(i, -1)}
+                disabled={i === 0}
+                title="Move up"
+                className="bg-transparent text-text-muted border border-border rounded-md p-1 cursor-pointer hover:bg-bg-elevated transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronUp className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => moveStep(i, 1)}
+                disabled={i === steps.length - 1}
+                title="Move down"
+                className="bg-transparent text-text-muted border border-border rounded-md p-1 cursor-pointer hover:bg-bg-elevated transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => removeStep(i)}
+                disabled={steps.length <= 1}
+                title="Remove"
+                className="bg-transparent text-danger border border-border rounded-md p-1 cursor-pointer hover:bg-danger-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           ))}
-          <button onClick={addStep} style={{ ...smallBtn, marginBottom: "12px" }}>+ Add step</button>
+          <button
+            onClick={addStep}
+            className="inline-flex items-center gap-1 bg-transparent text-text-secondary border border-border hover:bg-bg-elevated rounded-md px-3 py-1.5 text-sm cursor-pointer transition-colors mb-3"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Add step
+          </button>
 
-          <label style={{ ...labelStyle, marginTop: "8px" }}>Admin Notes (optional)</label>
+          <label className="block text-text-muted text-xs mb-1 mt-2">Admin Notes (optional)</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={2}
-            style={textareaStyle}
+            className="bg-bg-base text-text-primary border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent w-full box-border resize-y font-inherit"
             placeholder="Internal notes..."
           />
 
-          <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
+          <div className="flex gap-2 mt-3">
             <button
               onClick={handleResolve}
               disabled={submitting || !summary.trim() || steps.filter((s) => s.trim()).length === 0}
-              style={{ padding: "8px 20px", backgroundColor: "#2d6a4f", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: 600 }}
+              className="px-4 py-2 bg-accent text-white rounded-md text-sm font-medium border-none cursor-pointer hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? "Submitting..." : "Submit Solution"}
             </button>
             <button
               onClick={() => setShowResolve(false)}
-              style={{ padding: "8px 20px", backgroundColor: "transparent", color: "#ccc", border: "1px solid #555", borderRadius: "4px", cursor: "pointer" }}
+              className="bg-transparent text-text-secondary border border-border hover:bg-bg-elevated rounded-md px-4 py-2 text-sm cursor-pointer transition-colors"
             >
               Cancel
             </button>
@@ -267,8 +316,8 @@ export function ProblemDetailPage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ backgroundColor: "#16213e", border: "1px solid #0f3460", borderRadius: "8px", padding: "16px", marginBottom: "16px" }}>
-      <h3 style={{ margin: "0 0 12px", fontSize: "0.9rem", color: "#a0a0b8", textTransform: "uppercase", letterSpacing: "0.5px" }}>{title}</h3>
+    <div className="bg-bg-surface border border-border rounded-lg p-5 mb-4">
+      <h3 className="m-0 mb-3 text-[11px] font-semibold text-text-muted uppercase tracking-wide">{title}</h3>
       {children}
     </div>
   );
@@ -276,16 +325,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function KV({ label, value }: { label: string; value: string | null }) {
   return (
-    <div style={{ marginBottom: "6px" }}>
-      <span style={{ color: "#888", fontSize: "0.8rem" }}>{label}: </span>
-      <span style={{ color: "#ccc", fontSize: "0.85rem" }}>{value || "—"}</span>
+    <div className="mb-1.5">
+      <span className="text-text-muted text-xs">{label}: </span>
+      <span className="text-text-secondary text-sm">{value || "—"}</span>
     </div>
   );
 }
-
-const thSmall: React.CSSProperties = { textAlign: "left", padding: "6px 8px", fontWeight: 600, color: "#a0a0b8", fontSize: "0.7rem", textTransform: "uppercase", borderBottom: "1px solid #0f3460" };
-const tdSmall: React.CSSProperties = { padding: "6px 8px", color: "#ccc" };
-const inputStyle: React.CSSProperties = { padding: "6px 10px", backgroundColor: "#1a1a2e", color: "#e0e0e0", border: "1px solid #0f3460", borderRadius: "4px", fontSize: "0.85rem" };
-const labelStyle: React.CSSProperties = { display: "block", color: "#888", fontSize: "0.8rem", marginBottom: "4px" };
-const textareaStyle: React.CSSProperties = { width: "100%", boxSizing: "border-box" as const, backgroundColor: "#1a1a2e", color: "#e0e0e0", border: "1px solid #0f3460", borderRadius: "4px", padding: "8px", fontFamily: "inherit", fontSize: "0.85rem", resize: "vertical" as const };
-const smallBtn: React.CSSProperties = { padding: "4px 8px", backgroundColor: "transparent", color: "#a0a0b8", border: "1px solid #555", borderRadius: "4px", cursor: "pointer", fontSize: "0.8rem" };

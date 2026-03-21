@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 # Tables to truncate, in dependency-safe order (children before parents).
 GREXIS_TABLES = [
     "grexis.feedback_events",
-    "grexis.edges",
+    "grexis.resolution_edges",
     "grexis.agent_jobs",
     "grexis.failure_clusters",
     "grexis.solutions",

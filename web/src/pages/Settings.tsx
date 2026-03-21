@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import type { Settings } from "@/types/api";
+import { Save } from "lucide-react";
 
 export function SettingsPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -81,38 +82,50 @@ export function SettingsPage() {
   };
 
   if (loading) {
-    return <div><h1 style={{ margin: "0 0 16px" }}>Settings</h1><p style={{ color: "#888" }}>Loading...</p></div>;
+    return (
+      <div>
+        <h1 className="text-xl font-semibold tracking-tight text-text-primary mb-4">Settings</h1>
+        <div className="space-y-5">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="skeleton h-[120px] rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (error && !settings) {
-    return <div><h1 style={{ margin: "0 0 16px" }}>Settings</h1><p style={{ color: "#d62828" }}>{error}</p></div>;
+    return (
+      <div>
+        <h1 className="text-xl font-semibold tracking-tight text-text-primary mb-4">Settings</h1>
+        <p className="text-danger">{error}</p>
+      </div>
+    );
   }
 
   return (
-    <div style={{ maxWidth: "720px" }}>
+    <div className="max-w-2xl">
       {toast && (
-        <div style={{ position: "fixed", top: "16px", right: "16px", backgroundColor: "#2d6a4f", color: "#fff", padding: "10px 20px", borderRadius: "6px", zIndex: 999 }}>
+        <div className="fixed top-4 right-4 bg-success text-white px-5 py-2.5 rounded-lg shadow-md z-[999] text-sm">
           {toast}
         </div>
       )}
 
-      <h1 style={{ margin: "0 0 24px" }}>Settings</h1>
+      <h1 className="text-xl font-semibold tracking-tight text-text-primary mb-6">Settings</h1>
 
       {/* Search Weights */}
       <FormSection title="Search Weights">
-        <p style={{ color: "#888", fontSize: "0.8rem", margin: "0 0 12px" }}>
-          Must sum to 1.0. Current sum: {" "}
-          <span style={{ color: weightsValid ? "#2d6a4f" : "#d62828", fontFamily: "monospace", fontWeight: 700 }}>
+        <p className="text-text-muted text-xs mb-3">
+          Must sum to 1.0. Current sum:{" "}
+          <span className={`font-mono font-bold ${weightsValid ? "text-success" : "text-danger"}`}>
             {weightsSum.toFixed(2)}
           </span>
         </p>
         {(Object.keys(searchWeights) as Array<keyof typeof searchWeights>).map((key) => (
-          <div key={key} style={{ marginBottom: "12px" }}>
-            <label style={labelStyle}>
-              {key.replace(/_/g, " ")}
-              <span style={{ float: "right", fontFamily: "monospace", color: "#a8dadc" }}>
-                {searchWeights[key].toFixed(2)}
-              </span>
+          <div key={key} className="mb-3">
+            <label className="block text-text-muted text-xs mb-1">
+              <span>{key.replace(/_/g, " ")}</span>
+              <span className="float-right font-mono text-accent">{searchWeights[key].toFixed(2)}</span>
             </label>
             <input
               type="range"
@@ -121,14 +134,12 @@ export function SettingsPage() {
               step="0.01"
               value={searchWeights[key]}
               onChange={(e) => setSearchWeights({ ...searchWeights, [key]: parseFloat(e.target.value) })}
-              style={{ width: "100%", accentColor: "#0f3460" }}
+              className="w-full accent-accent"
             />
           </div>
         ))}
         {!weightsValid && (
-          <p style={{ color: "#d62828", fontSize: "0.8rem", margin: "4px 0 0" }}>
-            Weights must sum to 1.00
-          </p>
+          <p className="text-danger text-xs mt-1">Weights must sum to 1.00</p>
         )}
       </FormSection>
 
@@ -157,11 +168,11 @@ export function SettingsPage() {
       {/* Rate Limits */}
       <FormSection title="Rate Limits">
         {(["anonymous", "token_only", "registered"] as const).map((tier) => (
-          <div key={tier} style={{ marginBottom: "16px" }}>
-            <h4 style={{ margin: "0 0 8px", fontSize: "0.85rem", color: "#a8dadc", textTransform: "capitalize" }}>
+          <div key={tier} className="mb-4">
+            <h4 className="text-sm font-semibold text-accent capitalize mb-2">
               {tier.replace(/_/g, " ")}
             </h4>
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+            <div className="flex gap-3 flex-wrap">
               <NumberField
                 label="Submissions/hour"
                 value={rateLimits[tier].submissions_per_hour}
@@ -203,14 +214,14 @@ export function SettingsPage() {
 
       {/* Secret Scanning */}
       <FormSection title="Secret Scanning">
-        <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+        <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
             checked={secretScanning.enabled}
             onChange={(e) => setSecretScanning({ enabled: e.target.checked })}
-            style={{ accentColor: "#0f3460", width: "18px", height: "18px" }}
+            className="w-4 h-4 accent-accent"
           />
-          <span style={{ color: "#ccc", fontSize: "0.9rem" }}>
+          <span className="text-text-secondary text-sm">
             Enable secret scanning on submissions
           </span>
         </label>
@@ -220,18 +231,9 @@ export function SettingsPage() {
       <button
         onClick={handleSave}
         disabled={saving || !weightsValid}
-        style={{
-          padding: "10px 24px",
-          backgroundColor: saving || !weightsValid ? "#555" : "#2d6a4f",
-          color: saving || !weightsValid ? "#888" : "#fff",
-          border: "none",
-          borderRadius: "4px",
-          cursor: saving || !weightsValid ? "not-allowed" : "pointer",
-          fontWeight: 600,
-          fontSize: "1rem",
-          marginBottom: "40px",
-        }}
+        className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-md text-sm font-medium border-none cursor-pointer hover:bg-accent-hover transition-colors mb-10 disabled:opacity-40 disabled:cursor-not-allowed"
       >
+        <Save size={14} />
         {saving ? "Saving..." : "Save Settings"}
       </button>
     </div>
@@ -240,8 +242,8 @@ export function SettingsPage() {
 
 function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ backgroundColor: "#16213e", border: "1px solid #0f3460", borderRadius: "8px", padding: "16px 20px", marginBottom: "20px" }}>
-      <h3 style={{ margin: "0 0 16px", fontSize: "0.95rem", color: "#a0a0b8", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+    <div className="bg-bg-surface border border-border rounded-lg p-5 mb-5">
+      <h3 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-4">
         {title}
       </h3>
       {children}
@@ -261,32 +263,15 @@ function NumberField({
   min?: number;
 }) {
   return (
-    <div style={{ marginBottom: "10px", flex: "1 1 180px" }}>
-      <label style={labelStyle}>{label}</label>
+    <div className="mb-2.5 flex-1 min-w-44">
+      <label className="block text-text-muted text-xs mb-1">{label}</label>
       <input
         type="number"
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         min={min}
-        style={{
-          padding: "6px 10px",
-          backgroundColor: "#1a1a2e",
-          color: "#e0e0e0",
-          border: "1px solid #0f3460",
-          borderRadius: "4px",
-          fontSize: "0.9rem",
-          fontFamily: "monospace",
-          width: "100%",
-          boxSizing: "border-box",
-        }}
+        className="bg-bg-base text-text-primary border border-border rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent w-full"
       />
     </div>
   );
 }
-
-const labelStyle: React.CSSProperties = {
-  display: "block",
-  color: "#888",
-  fontSize: "0.8rem",
-  marginBottom: "4px",
-};

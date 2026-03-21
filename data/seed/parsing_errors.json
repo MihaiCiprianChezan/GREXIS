@@ -1,0 +1,171 @@
+[
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "OutputParserException",
+        "error_code": "json_parse_error",
+        "tool_name": "langchain.output_parsers.JsonOutputParser",
+        "operation": "response_parsing",
+        "severity": "blocking",
+        "details": "Failed to parse LLM output as JSON. Got: 'Here is the analysis:\\n```json\\n{\"score\": 8.5, \"summary\": \"Good performance\"}\\n```'. Error: Expecting value: line 1 column 1 (char 0)"
+      },
+      "environment": {
+        "framework": "langchain",
+        "framework_version": "0.3.10",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Parse structured JSON output from LangChain analysis chain"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Use a robust JSON extraction parser that handles markdown code fences",
+        "solution_steps": [
+          "Replace JsonOutputParser with a custom parser that strips markdown fences: use regex r'```(?:json)?\\s*([\\s\\S]*?)```' to extract JSON from code blocks",
+          "Use LangChain's JsonOutputParser with pydantic_object parameter for stricter schema validation",
+          "Add format_instructions to the prompt template using parser.get_format_instructions() to guide the LLM's output format",
+          "Enable auto-fixing with OutputFixingParser.from_llm(llm=llm, parser=json_parser) to automatically retry malformed outputs",
+          "Consider using with_structured_output() on the ChatModel for native JSON mode support"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.94
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ValidationError",
+        "error_code": "schema_validation_failed",
+        "tool_name": "pydantic.BaseModel",
+        "operation": "response_parsing",
+        "severity": "blocking",
+        "details": "2 validation errors for AnalysisResult: field 'confidence' - value is not a valid float (type=type_error.float); field 'categories' - field required (type=value_error.missing)"
+      },
+      "environment": {
+        "framework": "crewai",
+        "framework_version": "0.80.2",
+        "llm": "claude-3.5-sonnet",
+        "runtime": "python3.11"
+      },
+      "goal_state": "CrewAI agent returning structured analysis results matching Pydantic schema"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Add schema examples to the prompt and implement lenient parsing with defaults",
+        "solution_steps": [
+          "Include a concrete JSON example matching the exact Pydantic schema in the agent's task description",
+          "Add default values to optional Pydantic fields: categories: list[str] = Field(default_factory=list)",
+          "Use Pydantic's model_validate with strict=False to allow coercion (e.g., string '0.95' to float 0.95)",
+          "Implement a pre-validation step that adds missing fields with sensible defaults before Pydantic validation",
+          "Configure CrewAI's output_pydantic parameter on the Task to enable built-in schema enforcement"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.88
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "MalformedResponseError",
+        "error_code": "action_parse_error",
+        "tool_name": "langchain.agents.ReActAgent",
+        "operation": "action_parsing",
+        "severity": "blocking",
+        "details": "Could not parse LLM output: 'I need to search for information about this topic. Let me use the search tool to find relevant data.' Expected format: 'Action: <tool_name>\\nAction Input: <input>'"
+      },
+      "environment": {
+        "framework": "langchain",
+        "framework_version": "0.3.7",
+        "llm": "gemini-1.5-pro",
+        "runtime": "python3.12"
+      },
+      "goal_state": "ReAct agent parsing tool invocation from LLM response"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Switch to tool-calling agent type which uses native function calling instead of text parsing",
+        "solution_steps": [
+          "Migrate from create_react_agent to create_tool_calling_agent which uses the model's native tool/function calling API",
+          "Update agent creation: agent = create_tool_calling_agent(llm, tools, prompt) and executor = AgentExecutor(agent=agent, tools=tools)",
+          "This eliminates text parsing entirely as the model returns structured tool calls in a machine-readable format",
+          "If you must use ReAct-style parsing, add few-shot examples of the correct Action/Action Input format in the prompt",
+          "Consider migrating to LangGraph which provides more robust agent loop handling with typed state"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.92
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "JSONDecodeError",
+        "error_code": "unterminated_string",
+        "tool_name": "openai.ChatCompletion",
+        "operation": "response_parsing",
+        "severity": "degraded",
+        "details": "Unterminated string starting at: line 15 column 22 (char 483). The response appears to have been truncated due to max_tokens limit."
+      },
+      "environment": {
+        "framework": "autogen",
+        "framework_version": "0.4.6",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Parse complete JSON response from AutoGen coding agent"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Increase max_tokens and implement truncation-safe JSON parsing",
+        "solution_steps": [
+          "Increase max_tokens on the model configuration to allow the full response to be generated: config_list = [{'model': 'gpt-4o', 'max_tokens': 8192}]",
+          "Check the response's finish_reason: if it is 'length' instead of 'stop', the response was truncated and should be retried with higher max_tokens",
+          "Implement a JSON repair utility that attempts to close unclosed brackets and strings: use the json-repair Python package",
+          "For very large structured outputs, instruct the LLM to output in chunks and concatenate them",
+          "Use response_format={'type': 'json_object'} to enable JSON mode which guarantees valid JSON output"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.87
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ToolCallParseError",
+        "error_code": "invalid_tool_call_json",
+        "tool_name": "anthropic.Messages",
+        "operation": "tool_use_parsing",
+        "severity": "blocking",
+        "details": "Failed to parse tool_use block: the 'input' field contains invalid JSON. Raw input: '{query: \"weather in NYC\", units: fahrenheit}' (missing quotes around keys)."
+      },
+      "environment": {
+        "framework": "openai-agents",
+        "framework_version": "1.0.2",
+        "llm": "claude-3.5-sonnet",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Parse tool calls from Anthropic model in OpenAI Agents SDK"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Implement a lenient JSON parser and ensure proper provider adapter configuration",
+        "solution_steps": [
+          "Add a JSON5 or relaxed JSON parser that accepts unquoted keys: pip install json5 and use json5.loads() as a fallback",
+          "Verify the Anthropic provider adapter is correctly configured in the OpenAI Agents SDK to handle Claude's tool_use format",
+          "Update to the latest version of the anthropic SDK which includes improved tool call serialization",
+          "Add a normalization step that wraps unquoted keys in quotes using regex before JSON parsing: re.sub(r'(\\w+)\\s*:', r'\"\\1\":', raw_input)"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.81
+      }
+    ]
+  }
+]

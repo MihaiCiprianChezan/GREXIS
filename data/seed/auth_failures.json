@@ -1,0 +1,138 @@
+[
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "AuthenticationError",
+        "error_code": "invalid_api_key",
+        "tool_name": "openai.ChatCompletion",
+        "operation": "llm_call",
+        "severity": "blocking",
+        "details": "Incorrect API key provided: sk-proj-...XXXX. You can find your API key at https://platform.openai.com/account/api-keys."
+      },
+      "environment": {
+        "framework": "langchain",
+        "framework_version": "0.3.10",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Initialize LangChain agent with OpenAI model"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Validate and correctly set the OpenAI API key in environment variables",
+        "solution_steps": [
+          "Verify the API key is set: echo $OPENAI_API_KEY (should start with 'sk-' and not be truncated)",
+          "Check that the key has not been rotated or revoked in the OpenAI dashboard at platform.openai.com/api-keys",
+          "If using .env files, ensure python-dotenv is loading them before the LLM client initializes: from dotenv import load_dotenv; load_dotenv()",
+          "Verify no whitespace or newline characters in the key: OPENAI_API_KEY=$(echo $OPENAI_API_KEY | tr -d '\\n ')",
+          "If using project-scoped keys (sk-proj-...), ensure the key has access to the required models in the project settings"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.95
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "PermissionDeniedError",
+        "error_code": "insufficient_quota",
+        "tool_name": "openai.ChatCompletion",
+        "operation": "llm_call",
+        "severity": "blocking",
+        "details": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors."
+      },
+      "environment": {
+        "framework": "crewai",
+        "framework_version": "0.80.2",
+        "llm": "gpt-4o",
+        "runtime": "python3.11"
+      },
+      "goal_state": "Run CrewAI agent crew for data analysis task"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Add billing information or upgrade plan to restore API access",
+        "solution_steps": [
+          "Navigate to platform.openai.com/account/billing and verify a valid payment method is on file",
+          "Check the Usage page to see if you have hit a hard spend cap under Billing > Limits",
+          "If on a free trial, add a payment method to upgrade to a paid plan",
+          "Set a reasonable monthly budget limit to prevent unexpected charges while allowing continued access",
+          "If the issue persists after adding billing, wait 5-10 minutes for the billing system to propagate the change"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.93
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "AuthenticationError",
+        "error_code": "expired_token",
+        "tool_name": "anthropic.Messages",
+        "operation": "llm_call",
+        "severity": "blocking",
+        "details": "Your API key has expired. Please generate a new key at console.anthropic.com."
+      },
+      "environment": {
+        "framework": "autogen",
+        "framework_version": "0.4.5",
+        "llm": "claude-3.5-sonnet",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Start AutoGen multi-agent conversation with Anthropic backend"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Rotate the expired API key and update all configuration references",
+        "solution_steps": [
+          "Generate a new API key at console.anthropic.com under API Keys",
+          "Update the ANTHROPIC_API_KEY environment variable in your shell profile, .env file, and any CI/CD secrets",
+          "If using AutoGen's OAI_CONFIG_LIST, update the api_key field in the config file",
+          "Implement a key rotation schedule: set calendar reminders to rotate keys before expiry",
+          "Consider using a secrets manager (AWS Secrets Manager, HashiCorp Vault) to centralize key management and automate rotation"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.91
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "PermissionDeniedError",
+        "error_code": "model_access_denied",
+        "tool_name": "openai.ChatCompletion",
+        "operation": "llm_call",
+        "severity": "blocking",
+        "details": "The model 'gpt-4o' does not exist or you do not have access to it. You may need to join the waitlist or your organization needs to be granted access."
+      },
+      "environment": {
+        "framework": "openai-agents",
+        "framework_version": "1.0.3",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Deploy production agent using OpenAI Agents SDK"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Verify model access permissions at the organization and project level",
+        "solution_steps": [
+          "Check your organization's model access at platform.openai.com/account/limits to confirm gpt-4o is available",
+          "If using project-scoped API keys, verify the project has the model enabled in project settings",
+          "Try using the model ID 'gpt-4o-2024-08-06' explicitly instead of the alias 'gpt-4o'",
+          "Contact OpenAI support or your organization admin to request model access if it is restricted",
+          "As a temporary workaround, fall back to 'gpt-4o-mini' which has broader access availability"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.88
+      }
+    ]
+  }
+]

@@ -3,25 +3,12 @@ import { Sidebar } from "@/components/Sidebar";
 
 export function Layout() {
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        backgroundColor: "#1a1a2e",
-        color: "#e0e0e0",
-        fontFamily:
-          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      }}
-    >
+    <div className="flex min-h-screen bg-bg-base text-text-primary font-sans">
       <Sidebar />
-      <main
-        style={{
-          flex: 1,
-          padding: "24px",
-          overflow: "auto",
-        }}
-      >
-        <Outlet />
+      <main className="flex-1 overflow-auto p-8">
+        <div className="max-w-[1400px] mx-auto">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

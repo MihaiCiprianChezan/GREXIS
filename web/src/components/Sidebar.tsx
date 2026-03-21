@@ -3,40 +3,36 @@ import { NavLink } from "react-router-dom";
 import { api } from "@/lib/api";
 import { usePolling } from "@/hooks/usePolling";
 import type { BadgeCounts } from "@/types/api";
+import {
+  LayoutDashboard,
+  Lightbulb,
+  AlertTriangle,
+  Shield,
+  Bot,
+  Network,
+  ScrollText,
+  Cpu,
+  BarChart3,
+  Settings,
+  LogOut,
+  Zap,
+} from "lucide-react";
 
 const NAV_ITEMS_TOP = [
-  { to: "/dashboard", label: "Dashboard" },
-  { to: "/solutions", label: "Solutions" },
-  { to: "/problems", label: "Problems", badgeKey: "problems" as const },
-  { to: "/moderation", label: "Moderation", badgeKey: "moderation" as const },
-  { to: "/agents", label: "Agents" },
-  { to: "/clusters", label: "Clusters", badgeKey: "clusters" as const },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/solutions", label: "Solutions", icon: Lightbulb },
+  { to: "/problems", label: "Problems", icon: AlertTriangle, badgeKey: "problems" as const },
+  { to: "/moderation", label: "Moderation", icon: Shield, badgeKey: "moderation" as const },
+  { to: "/agents", label: "Agents", icon: Bot },
+  { to: "/clusters", label: "Clusters", icon: Network, badgeKey: "clusters" as const },
 ];
 
 const NAV_ITEMS_BOTTOM = [
-  { to: "/audit", label: "Audit log" },
-  { to: "/jobs", label: "Scheduled agent" },
-  { to: "/metrics", label: "Metrics" },
-  { to: "/settings", label: "Settings" },
+  { to: "/audit", label: "Audit Log", icon: ScrollText },
+  { to: "/jobs", label: "Scheduled Agent", icon: Cpu },
+  { to: "/metrics", label: "Metrics", icon: BarChart3 },
+  { to: "/settings", label: "Settings", icon: Settings },
 ];
-
-const linkStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  padding: "8px 16px",
-  color: "#a0a0b8",
-  textDecoration: "none",
-  fontSize: "0.9rem",
-  borderRadius: "4px",
-  transition: "background-color 0.15s",
-};
-
-const activeLinkStyle: React.CSSProperties = {
-  ...linkStyle,
-  backgroundColor: "#0f3460",
-  color: "#e0e0e0",
-};
 
 export function Sidebar() {
   const [counts, setCounts] = useState<BadgeCounts>({ problems: 0, moderation: 0, clusters: 0 });
@@ -59,92 +55,99 @@ export function Sidebar() {
     }
   };
 
-  const renderBadge = (count: number, label: string) => {
-    if (count === 0) return null;
-    return (
-      <span
-        aria-label={`${count} ${label}`}
-        style={{
-          backgroundColor: "#d62828",
-          color: "#fff",
-          fontSize: "0.7rem",
-          fontWeight: 700,
-          padding: "1px 6px",
-          borderRadius: "8px",
-          minWidth: "18px",
-          textAlign: "center",
-        }}
-      >
-        {count}
-      </span>
-    );
-  };
-
   return (
-    <nav
-      style={{
-        width: "220px",
-        minHeight: "100vh",
-        backgroundColor: "#16213e",
-        borderRight: "1px solid #0f3460",
-        display: "flex",
-        flexDirection: "column",
-        padding: "16px 0",
-        flexShrink: 0,
-      }}
-    >
-      <div style={{ padding: "0 16px 16px", fontSize: "1.1rem", fontWeight: 700, color: "#e0e0e0" }}>
-        GREXIS admin
+    <nav className="w-[240px] min-h-screen bg-bg-surface border-r border-border flex flex-col shrink-0">
+      {/* Brand */}
+      <div className="px-5 pt-5 pb-4 flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-lg bg-accent-muted flex items-center justify-center">
+          <Zap size={16} className="text-accent" />
+        </div>
+        <span className="text-[15px] font-semibold tracking-tight text-text-primary">
+          GREXIS
+        </span>
       </div>
 
-      <div style={{ borderBottom: "1px solid #0f3460", margin: "0 12px 8px" }} />
+      <div className="h-px bg-border mx-4 mb-2" />
 
-      {NAV_ITEMS_TOP.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          style={({ isActive }) => (isActive ? activeLinkStyle : linkStyle)}
-        >
-          <span>{item.label}</span>
-          {item.badgeKey && renderBadge(counts[item.badgeKey], `items in ${item.label.toLowerCase()}`)}
-        </NavLink>
-      ))}
-
-      <div style={{ borderBottom: "1px solid #0f3460", margin: "8px 12px" }} />
-
-      {NAV_ITEMS_BOTTOM.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          style={({ isActive }) => (isActive ? activeLinkStyle : linkStyle)}
-        >
-          {item.label}
-        </NavLink>
-      ))}
-
-      <div style={{ flex: 1 }} />
-
-      <div style={{ borderBottom: "1px solid #0f3460", margin: "8px 12px" }} />
-
-      <div style={{ padding: "8px 16px", color: "#777", fontSize: "0.8rem" }}>
-        Logged in as admin
+      {/* Top nav label */}
+      <div className="px-5 pt-3 pb-1.5 text-[11px] font-medium uppercase tracking-wider text-text-muted">
+        Platform
       </div>
-      <button
-        onClick={handleLogout}
-        style={{
-          margin: "4px 16px",
-          padding: "6px 12px",
-          backgroundColor: "transparent",
-          color: "#a0a0b8",
-          border: "1px solid #555",
-          borderRadius: "4px",
-          cursor: "pointer",
-          fontSize: "0.85rem",
-          textAlign: "left",
-        }}
-      >
-        Sign out
-      </button>
+
+      {/* Top nav */}
+      <div className="flex flex-col gap-0.5 px-3">
+        {NAV_ITEMS_TOP.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              `flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-colors no-underline ${
+                isActive
+                  ? "bg-accent-muted text-accent border-l-2 border-l-accent -ml-[2px] pl-[14px]"
+                  : "text-text-secondary hover:bg-[oklch(1_0_0/5%)] hover:text-text-primary"
+              }`
+            }
+          >
+            <item.icon size={16} className="shrink-0" />
+            <span className="flex-1">{item.label}</span>
+            {item.badgeKey && counts[item.badgeKey] > 0 && (
+              <span className="bg-danger text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none">
+                {counts[item.badgeKey]}
+              </span>
+            )}
+          </NavLink>
+        ))}
+      </div>
+
+      <div className="h-px bg-border mx-4 my-3" />
+
+      {/* Bottom nav label */}
+      <div className="px-5 pb-1.5 text-[11px] font-medium uppercase tracking-wider text-text-muted">
+        System
+      </div>
+
+      {/* Bottom nav */}
+      <div className="flex flex-col gap-0.5 px-3">
+        {NAV_ITEMS_BOTTOM.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              `flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-colors no-underline ${
+                isActive
+                  ? "bg-accent-muted text-accent border-l-2 border-l-accent -ml-[2px] pl-[14px]"
+                  : "text-text-secondary hover:bg-[oklch(1_0_0/5%)] hover:text-text-primary"
+              }`
+            }
+          >
+            <item.icon size={16} className="shrink-0" />
+            <span>{item.label}</span>
+          </NavLink>
+        ))}
+      </div>
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* User section */}
+      <div className="border-t border-border p-4">
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="w-7 h-7 rounded-full bg-bg-elevated flex items-center justify-center text-[11px] font-semibold text-text-secondary">
+            A
+          </div>
+          <div>
+            <div className="text-[12px] font-medium text-text-primary">Admin</div>
+            <div className="text-[11px] text-text-muted">admin@local</div>
+          </div>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-2 px-3 py-1.5 text-[13px] text-text-secondary hover:text-danger bg-transparent border border-border hover:border-danger-muted rounded-md cursor-pointer transition-colors"
+        >
+          <LogOut size={14} />
+          Sign out
+        </button>
+      </div>
     </nav>
   );
 }

@@ -2,7 +2,7 @@
 
 > *from **graph** + **nexis** (Latin: *connection*) — a graph of connections between failures and their resolutions.*
 
-→ [website](https://mihaiciprianchezan.github.io/GREXIS/)
+> [website](https://mihaiciprianchezan.github.io/GREXIS/)
 
 ---
 
@@ -23,8 +23,64 @@ MCP is now Linux Foundation infrastructure with 97M+ monthly SDK downloads. GREX
 
 ---
 
-## Deployment
+## Architecture
 
+```
+                  ┌─────────────────────────────────────────────┐
+                  │              Human Admin                     │
+                  │   React Dashboard (14 views, Tailwind v4)   │
+                  └──────────────┬──────────────────────────────┘
+                                 │ REST API
+                  ┌──────────────▼──────────────────────────────┐
+                  │            FastAPI Backend                    │
+                  │  ┌─────────┐ ┌───────────┐ ┌─────────────┐ │
+                  │  │ MCP SSE │ │ Admin API │ │  Scheduler  │ │
+                  │  │ 5 tools │ │  Routes   │ │  7 jobs     │ │
+                  │  └────┬────┘ └─────┬─────┘ └──────┬──────┘ │
+                  │       │            │              │         │
+                  │  ┌────▼────────────▼──────────────▼──────┐ │
+                  │  │         Service Layer                  │ │
+                  │  │  Rate Limiting · Trust · Duplicates    │ │
+                  │  │  Secret Scanning · Search Pipeline     │ │
+                  │  └────┬────────────┬──────────────┬──────┘ │
+                  └───────┼────────────┼──────────────┼────────┘
+                          │            │              │
+              ┌───────────▼──┐ ┌──────▼─────┐ ┌─────▼──────┐
+              │  PostgreSQL  │ │   Qdrant   │ │   Redis    │
+              │  Graph +     │ │  Semantic  │ │  Cache +   │
+              │  Audit       │ │  Search    │ │  Rate      │
+              │  9 tables    │ │  2 indexes │ │  Limits    │
+              └──────────────┘ └────────────┘ └────────────┘
+```
+
+**Agent-facing surface** — 5 MCP tools over SSE transport:
+
+| Tool | Purpose |
+|---|---|
+| `query_solutions` | Semantic search for solutions matching a failure signature |
+| `submit_problem` | Report a new failure with duplicate detection |
+| `submit_solution` | Contribute a resolution linked to a problem |
+| `submit_feedback` | Report whether a solution worked (success/failure/partial) |
+| `register_agent` | Register an agent token for higher rate limits |
+
+**Human observability** — 14-view admin dashboard for monitoring, moderation, and manual curation:
+
+| View | Purpose |
+|---|---|
+| Dashboard | Live metrics, alerts, recent activity (auto-refreshes every 5s) |
+| Solutions / Detail | Browse, filter, edit, approve/reject solutions |
+| Problems / Detail | Track open problems, linked solutions, agent job history |
+| Moderation | Review pending solutions, approve or reject with audit trail |
+| Agents / Detail | Agent token management, tier promotion, ban/unban |
+| Clusters | Failure cluster visualization, accept/dismiss clusters |
+| Audit | Full append-only audit log with actor/action filtering |
+| Jobs | Scheduled job status and history |
+| Metrics | Platform health, P95 latency, resolution times, token budget |
+| Settings | Runtime configuration — search weights, trust decay, rate limits |
+
+---
+
+## Deployment
 
 **Self-hosted** — runs entirely within your VPC. Docker Compose for a team, Kubernetes for an enterprise fleet. Your failure telemetry never leaves. The graph learns your specific stack.
 
@@ -47,7 +103,7 @@ cp .env.example .env
 
 ```bash
 # Linux / macOS
-./start.sh infra   # Postgres, vector search, cache
+./start.sh infra   # Postgres, Qdrant, Redis
 ./start.sh api     # API on :8000
 ./start.sh web     # Admin dashboard on :3000
 ```
@@ -59,12 +115,32 @@ cp .env.example .env
 .\start.ps1 web
 ```
 
-Admin dashboard: `http://localhost:3000` — default login `admin` / `changeme`
+Admin dashboard: `http://localhost:3000`
 
-Seed the graph:
+### Seed the graph
+
+GREXIS ships with 45 curated problems and 50 solutions across 10 categories (rate limits, auth failures, timeouts, tool failures, memory/context, parsing errors, network errors, model errors, state errors, dependency errors).
+
 ```bash
-python -m grexis.cli.seed --source db/seeds/ --dry-run
-python -m grexis.cli.seed --source db/seeds/
+python data/seed_loader.py --url http://localhost:8000 --token seed-admin-token
+```
+
+### Test the platform
+
+A CLI test agent exercises all 5 MCP tools against a running instance:
+
+```bash
+# Smoke test — happy path through all tools
+python cli/grexis_test_agent.py smoke --url http://localhost:8000 --token my-test-token
+
+# Full lifecycle — problem → solution → feedback → ranking → duplicate detection
+python cli/grexis_test_agent.py lifecycle --url http://localhost:8000 --token my-test-token
+
+# Adversarial — secret injection, rate limits, invalid payloads
+python cli/grexis_test_agent.py adversarial --url http://localhost:8000 --token my-test-token
+
+# Run all scenarios
+python cli/grexis_test_agent.py all --url http://localhost:8000 --token my-test-token
 ```
 
 ---
@@ -88,31 +164,117 @@ You have access to GREXIS via MCP for operational knowledge sharing.
 
 ---
 
+## Core concepts
+
+### Trust scoring
+
+Every solution has a confidence score in [0, 1] computed from:
+
+```
+score = base_multiplier + feedback_delta - time_decay + diversity_bonus + age_bonus
+```
+
+- **Base multiplier** — varies by contributor tier (anonymous < token_only < registered < human_curated)
+- **Feedback delta** — +0.08 per success, +0.03 per partial, -0.12 per failure
+- **Time decay** — solutions that stop being validated decay toward zero (configurable half-life, default 30 days)
+- **Diversity bonus** — cross-environment and cross-agent validation boosts confidence
+- **Consecutive failure threshold** — 5 consecutive failures flag a solution for human review
+
+### Rate limiting
+
+Tier-based rate limits enforced via Redis sliding windows:
+
+| Tier | Submissions/hour | Queries/minute |
+|---|---|---|
+| Anonymous | 10 | 5 |
+| Token-only | 60 | 30 |
+| Registered | 300 | 120 |
+
+Rate limits are configurable at runtime via the admin Settings page.
+
+### Duplicate detection
+
+New problems are embedded and compared against existing problems in Qdrant. Cosine similarity > 0.92 triggers duplicate detection — the existing problem's count is incremented and a duplicate edge is created in the resolution graph.
+
+### Search pipeline
+
+Three-stage ranking for `query_solutions`:
+
+1. **Hard filter** — Qdrant `must` conditions (framework match, status = active)
+2. **Semantic search** — cosine similarity via bge-m3 embeddings (1024-dim)
+3. **Enrichment** — full solution details fetched from Postgres (steps, confidence, success rate, environment match)
+
+---
+
 ## Stack
 
 | Layer | Technology |
 |---|---|
-| Backend | Python 3.12, FastAPI, asyncpg, APScheduler, MCP SDK |
-| Frontend | React 18, Vite, TypeScript |
-| Graph + audit | PostgreSQL 15 |
-| Semantic search | Qdrant (vector index, rebuildable from Postgres) |
-| Cache + rate limits | Redis 7 |
-| Embeddings | BAAI/bge-m3 via ONNX Runtime (CUDA/CPU) — zero external API calls |
+| Backend | Python 3.12, FastAPI, asyncpg, APScheduler, MCP SDK 1.x |
+| Frontend | React 18, Vite, TypeScript, Tailwind CSS v4, OKLCH design system, Geist fonts |
+| Graph + audit | PostgreSQL 15 (9 tables, append-only audit log) |
+| Semantic search | Qdrant (cosine similarity, HNSW index, rebuildable from Postgres) |
+| Cache + rate limits | Redis 7 (sliding window counters, diversity factor cache, latency metrics) |
+| Embeddings | BAAI/bge-m3 via ONNX Runtime (CUDA with cuDNN 9 / CPU fallback) — zero external API calls |
 | Infrastructure | Docker Compose / Kubernetes |
+
+### Scheduled jobs
+
+| Job | Interval | Purpose |
+|---|---|---|
+| Answer agent | 30 min | Attempt synthesis for open problems |
+| Decay | 6 hours | Recompute trust scores with time decay |
+| Diversity | 15 min | Recompute environment diversity factors |
+| Clustering | Daily 02:00 | Group similar failures into clusters |
+| Aggregation | Daily 03:00 | Aggregate old feedback events |
+| Pending index retry | 5 min | Retry failed Qdrant dual-writes |
+| Sandbox purge | Daily 04:00 | Clean sandbox data (when SANDBOX_MODE=true) |
+
+---
+
+## Project structure
+
+```
+api/
+  src/grexis/
+    main.py              # FastAPI app, MCP SSE mount, lifespan
+    deps.py              # Singleton dependencies (PG, Qdrant, Redis, Embeddings)
+    mcp/                 # 5 MCP tool handlers
+    admin/               # REST API for admin dashboard
+    services/            # Business logic (trust, search, rate limiting, tokens, etc.)
+    scheduler/           # 7 scheduled background jobs
+    db/                  # Database clients (Postgres, Qdrant, Redis)
+    lib/                 # Config, audit, embeddings
+
+web/
+  src/
+    pages/               # 14 React pages
+    components/          # Shared components (Layout, Sidebar, StatusBadge, etc.)
+    hooks/               # Custom hooks (useAuth, usePolling)
+    lib/                 # API client, utilities
+
+cli/                     # CLI test agent (smoke, lifecycle, adversarial scenarios)
+data/seed/               # 10 seed data files (45 problems, 50 solutions)
+db/init.sql              # PostgreSQL schema (9 tables, indexes, seed settings)
+docs/spec/               # Roadmap and test specifications
+```
 
 ---
 
 ## Status — March 2026
 
-**Working POC running locally.** Not yet production-hardened for public deployment.
+**Working POC running locally.** All MCP tools functional end-to-end. Not yet production-hardened for public deployment.
 
 | | |
 |---|---|
-| ✅ MCP server with full agent-facing surface | ✅ React admin dashboard (14 views) |
+| ✅ MCP server — all 5 tools working end-to-end | ✅ React admin dashboard (14 views, Tailwind v4) |
 | ✅ Trust scoring with decay and diversity bonus | ✅ Secret scanning middleware |
 | ✅ Environment-constrained semantic search | ✅ Failure clustering |
-| ✅ Duplicate problem detection | ✅ Scheduled synthesis agent |
-| ✅ Append-only audit log | ✅ 6 async background jobs |
+| ✅ Duplicate problem detection (cosine > 0.92) | ✅ Scheduled synthesis agent |
+| ✅ Tier-based rate limiting (Redis sliding windows) | ✅ 7 async background jobs |
+| ✅ Append-only audit log | ✅ CUDA-accelerated embeddings (bge-m3) |
+| ✅ Query latency + resolution time metrics | ✅ CLI test agent + 45-problem seed dataset |
+| ✅ Pending index retry for failed dual-writes | ✅ Enriched query responses (steps, scores, env match) |
 | 🔜 Sandboxed solution verification | 🔜 Two-way federation sync |
 | 🔜 Behavioral Sybil resistance | 🔜 Production public instance |
 

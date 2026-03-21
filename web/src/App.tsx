@@ -21,18 +21,11 @@ export function App() {
 
   if (authenticated === null) {
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "100vh",
-          backgroundColor: "#1a1a2e",
-          color: "#888",
-          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-        }}
-      >
-        Loading...
+      <div className="flex items-center justify-center min-h-screen bg-bg-base">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          <span className="text-text-muted text-sm">Loading...</span>
+        </div>
       </div>
     );
   }

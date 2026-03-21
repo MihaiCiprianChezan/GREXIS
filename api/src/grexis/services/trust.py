@@ -6,8 +6,12 @@ Implements the confidence score formula from Tech Spec Section 7 (PRD v0.6):
 
 from __future__ import annotations
 
+import logging
 import math
 from datetime import datetime, timezone
+
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -62,10 +66,12 @@ def _is_same_minor_version(v1: str, v2: str) -> bool:
 # ---------------------------------------------------------------------------
 
 async def compute_confidence_score(
-    solution,          # ORM/dict-like: .agent_token_hash, .framework, .last_validated_at, .created_at, .id
-    feedbacks,         # list of objects with .outcome attribute
+    solution,          # asyncpg Record: solution["agent_token_hash"], solution["framework"],
+                       #   solution["last_validated_at"], solution["created_at"], solution["id"],
+                       #   solution["tier"] (must be pre-joined by caller)
+    feedbacks,         # list of asyncpg Records with f["outcome"]
     redis_client,
-    config,            # has .get_half_life(framework), .get_token_first_seen(hash)
+    half_life_days: int = 30,
 ) -> float:
     """Compute the full confidence score for a solution.
 
@@ -78,24 +84,22 @@ async def compute_confidence_score(
         decay           = pre_decay_score * (1 - 0.5 ^ (days / half_life))
         diversity_bonus = 0.15 * env_diversity_factor  (from Redis, TTL 900s)
         age_bonus       = min(0.10 * log(token_age_days + 1), 0.10)
-    """
-    tier = getattr(solution, "tier", None)
-    if tier is None:
-        # Resolve tier from token hash via config helper if available
-        tier = await config.get_token_tier(solution.agent_token_hash)
 
+    Note: ``solution`` must include a ``tier`` column (e.g. joined from
+    grexis.agent_tokens or defaulted to 'anonymous' by the caller).
+    """
+    tier = solution["tier"] if solution["tier"] else "anonymous"
     base = compute_base_score(tier)
 
-    outcomes = [f.outcome for f in feedbacks]
+    outcomes = [f["outcome"] for f in feedbacks]
     delta_sum = compute_delta_sum(outcomes)
 
     # Time decay
-    half_life_days = config.get_half_life(solution.framework)
     now = datetime.now(tz=timezone.utc)
-    reference_dt = solution.last_validated_at or solution.created_at
-    if reference_dt.tzinfo is None:
+    reference_dt = solution["last_validated_at"] or solution["created_at"]
+    if reference_dt is not None and reference_dt.tzinfo is None:
         reference_dt = reference_dt.replace(tzinfo=timezone.utc)
-    days_since_validation = _days_between(reference_dt, now)
+    days_since_validation = _days_between(reference_dt, now) if reference_dt else 0.0
 
     pre_decay_score = base + delta_sum
     if half_life_days > 0:
@@ -104,19 +108,13 @@ async def compute_confidence_score(
         decay = 0.0
 
     # Diversity bonus — loaded from Redis cache (may be up to 15 min stale)
-    cached_factor = await redis_client.get(f"diversity:{solution.id}")
+    cached_factor = await redis_client.get_cached(f"diversity:{solution['id']}")
     env_diversity_factor = float(cached_factor) if cached_factor else 0.0
     diversity_bonus = 0.15 * env_diversity_factor
 
-    # Token age bonus
-    token_first_seen = await config.get_token_first_seen(solution.agent_token_hash)
-    if token_first_seen:
-        if token_first_seen.tzinfo is None:
-            token_first_seen = token_first_seen.replace(tzinfo=timezone.utc)
-        token_age_days = _days_between(token_first_seen, now)
-    else:
-        token_age_days = 0.0
-    age_bonus = min(0.10 * math.log(token_age_days + 1), 0.10)
+    # Token age bonus — default to 0 if not available; the decay job (runs every
+    # 6 hours) handles this properly via the joined token_first_seen column.
+    age_bonus = 0.0
 
     raw = pre_decay_score - decay + diversity_bonus + age_bonus
     return max(0.0, min(1.0, raw))
@@ -130,11 +128,12 @@ async def handle_consecutive_failures(
     db,
     redis,
     solution_id: str,
-    config,
+    threshold: int = 5,
 ) -> None:
     """Flag a solution and penalise its score after N consecutive failures.
 
-    Threshold is read from ``config.CONSECUTIVE_FAILURE_THRESHOLD`` (default 5).
+    Inserts into grexis.moderation_queue have been removed because that table
+    does not exist in the schema. A warning is logged instead.
     """
     recent_feedbacks = await db.fetch(
         """
@@ -145,8 +144,6 @@ async def handle_consecutive_failures(
         """,
         solution_id,
     )
-
-    threshold = getattr(config, "CONSECUTIVE_FAILURE_THRESHOLD", 5)
 
     # Count trailing consecutive failures
     consecutive_failures = 0
@@ -169,13 +166,10 @@ async def handle_consecutive_failures(
             """,
             solution_id,
         )
-        await db.execute(
-            """
-            INSERT INTO grexis.moderation_queue (solution_id, reason)
-            VALUES ($1, $2)
-            """,
-            solution_id,
-            f"{threshold} consecutive failures",
+        logger.warning(
+            "Solution %s flagged after %d consecutive failures (threshold=%d). "
+            "Manual review required.",
+            solution_id, consecutive_failures, threshold,
         )
         # Invalidate Redis cache for this solution's diversity factor
-        await redis.delete(f"diversity:{solution_id}")
+        await redis.client.delete(f"diversity:{solution_id}")

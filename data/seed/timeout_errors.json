@@ -1,0 +1,150 @@
+[
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ConnectTimeout",
+        "error_code": "ETIMEDOUT",
+        "tool_name": "openai.ChatCompletion",
+        "operation": "llm_call",
+        "severity": "blocking",
+        "details": "Connection to api.openai.com timed out after 10.0 seconds. (connect timeout=10.0)"
+      },
+      "environment": {
+        "framework": "langchain",
+        "framework_version": "0.3.11",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Execute LangChain agent with web search and code execution tools"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Increase connection timeout and configure retry logic for transient network issues",
+        "solution_steps": [
+          "Increase the connection timeout on the ChatOpenAI instance: ChatOpenAI(model='gpt-4o', timeout=60, max_retries=3)",
+          "Check network connectivity to api.openai.com: curl -I https://api.openai.com/v1/models",
+          "If behind a corporate proxy, configure the HTTP_PROXY and HTTPS_PROXY environment variables",
+          "Verify DNS resolution: nslookup api.openai.com should return valid IP addresses",
+          "If in a containerized environment, ensure the container has outbound internet access on port 443"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.89
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ReadTimeout",
+        "error_code": "read_timeout",
+        "tool_name": "anthropic.Messages",
+        "operation": "llm_call",
+        "severity": "blocking",
+        "details": "Request to api.anthropic.com/v1/messages timed out after 600.0 seconds while waiting for response body."
+      },
+      "environment": {
+        "framework": "crewai",
+        "framework_version": "0.80.3",
+        "llm": "claude-3.5-sonnet",
+        "runtime": "python3.11"
+      },
+      "goal_state": "Complete long-running CrewAI research task with extensive tool use"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Enable streaming to avoid read timeouts on long-running LLM requests",
+        "solution_steps": [
+          "Enable streaming on the Anthropic client to receive partial responses and keep the connection alive",
+          "Configure CrewAI to use streaming: set the llm parameter with streaming=True in the Agent constructor",
+          "Reduce the complexity of individual prompts to decrease generation time: break large tasks into smaller sub-tasks",
+          "Set max_tokens to a reasonable limit (4096) to prevent the model from generating extremely long responses",
+          "Monitor API status at status.anthropic.com for any ongoing service degradation"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.82
+      },
+      {
+        "solution_summary": "Implement request chunking to stay within timeout windows",
+        "solution_steps": [
+          "Break the research task into smaller subtasks that complete within 120 seconds each",
+          "Use CrewAI's task decomposition: set each Task to have a focused, narrow objective",
+          "Configure an intermediate timeout of 300 seconds with automatic retry on timeout",
+          "Implement checkpointing so progress is saved between subtask executions"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.76
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "GatewayTimeout",
+        "error_code": "504",
+        "tool_name": "openai.ChatCompletion",
+        "operation": "function_call",
+        "severity": "blocking",
+        "details": "504 Gateway Time-out: The server did not receive a timely response from the upstream server."
+      },
+      "environment": {
+        "framework": "autogen",
+        "framework_version": "0.4.6",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Complete AutoGen coding task with iterative code generation and execution"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Handle 504 gateway timeouts with retry logic and request optimization",
+        "solution_steps": [
+          "Add retry logic specifically for 504 errors with exponential backoff starting at 5 seconds",
+          "Check the OpenAI status page at status.openai.com for any ongoing incidents",
+          "Reduce the size of the conversation history sent with each request by summarizing earlier messages",
+          "If the 504 occurs during function calling, simplify the function schema to reduce processing time on the server side",
+          "Consider using gpt-4o-mini for initial iterations and gpt-4o only for final refinement to reduce load"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.79
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ConnectTimeout",
+        "error_code": "ETIMEDOUT",
+        "tool_name": "httpx.Client",
+        "operation": "tool_execution",
+        "severity": "degraded",
+        "details": "Connection to internal-tool-api:8080 timed out after 5.0 seconds. The tool server may be down or unreachable."
+      },
+      "environment": {
+        "framework": "openai-agents",
+        "framework_version": "1.0.2",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Agent calling custom HTTP tool for database queries"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Add health checks and circuit breaker pattern for external tool endpoints",
+        "solution_steps": [
+          "Implement a health check that verifies tool server availability before starting the agent run",
+          "Add a circuit breaker pattern: after 3 consecutive timeouts, mark the tool as unavailable and skip it for 60 seconds",
+          "Increase the per-tool timeout for known slow endpoints: configure timeout=30 on the tool's HTTP client",
+          "Provide the agent with a graceful fallback message when a tool is unavailable instead of raising an exception",
+          "Log all tool timeouts with full context (URL, headers, timeout value) for debugging"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.84
+      }
+    ]
+  }
+]

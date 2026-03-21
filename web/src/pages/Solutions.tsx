@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/StatusBadge";
 import { SourceBadge } from "@/components/SourceBadge";
@@ -8,6 +9,12 @@ import type { Solution } from "@/types/api";
 const STATUSES = ["active", "pending_review", "flagged", "inactive", "pending_index"];
 const SOURCES = ["agent_contributed", "scheduled_agent", "human_curated", "federated"];
 const PER_PAGE = 50;
+
+const confidenceClass = (score: number) => {
+  if (score >= 0.65) return "text-success";
+  if (score >= 0.3) return "text-warning";
+  return "text-danger";
+};
 
 export function SolutionsPage() {
   const [solutions, setSolutions] = useState<Solution[]>([]);
@@ -52,29 +59,26 @@ export function SolutionsPage() {
 
   const totalPages = Math.ceil(total / PER_PAGE);
 
-  const confidenceColor = (score: number) => {
-    if (score >= 0.65) return "#2d6a4f";
-    if (score >= 0.3) return "#e09f3e";
-    return "#d62828";
-  };
-
   return (
     <div>
-      <h1 style={{ margin: "0 0 16px" }}>Solutions</h1>
+      <h1 className="text-xl font-semibold tracking-tight mb-4">Solutions</h1>
 
       {/* Filter bar */}
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "16px" }}>
-        <input
-          type="text"
-          placeholder="Search summary..."
-          value={searchText}
-          onChange={(e) => { setSearchText(e.target.value); setPage(1); }}
-          style={inputStyle}
-        />
+      <div className="flex gap-2 flex-wrap mb-4">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-text-muted pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search summary..."
+            value={searchText}
+            onChange={(e) => { setSearchText(e.target.value); setPage(1); }}
+            className="bg-bg-base text-text-primary border border-border rounded-md pl-8 pr-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+          />
+        </div>
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          style={inputStyle}
+          className="bg-bg-base text-text-primary border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
         >
           <option value="">All statuses</option>
           {STATUSES.map((s) => (
@@ -84,7 +88,7 @@ export function SolutionsPage() {
         <select
           value={sourceFilter}
           onChange={(e) => { setSourceFilter(e.target.value); setPage(1); }}
-          style={inputStyle}
+          className="bg-bg-base text-text-primary border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
         >
           <option value="">All sources</option>
           {SOURCES.map((s) => (
@@ -96,74 +100,80 @@ export function SolutionsPage() {
           placeholder="Framework..."
           value={frameworkFilter}
           onChange={(e) => { setFrameworkFilter(e.target.value); setPage(1); }}
-          style={{ ...inputStyle, width: "120px" }}
+          className="bg-bg-base text-text-primary border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent w-[120px]"
         />
         <input
           type="text"
           placeholder="Error type..."
           value={errorTypeFilter}
           onChange={(e) => { setErrorTypeFilter(e.target.value); setPage(1); }}
-          style={{ ...inputStyle, width: "140px" }}
+          className="bg-bg-base text-text-primary border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent w-[140px]"
         />
       </div>
 
       {error && (
-        <p style={{ color: "#d62828", marginBottom: "12px" }}>
-          {error} <button onClick={fetchSolutions} style={retryStyle}>Retry</button>
+        <p className="text-danger mb-3 text-sm flex items-center gap-2">
+          {error}
+          <button
+            onClick={fetchSolutions}
+            className="px-2 py-1 rounded-md text-sm font-medium border-none cursor-pointer transition-colors bg-transparent text-text-secondary border border-border hover:bg-bg-elevated"
+          >
+            Retry
+          </button>
         </p>
       )}
 
       {/* Table */}
-      <div style={{ backgroundColor: "#16213e", border: "1px solid #0f3460", borderRadius: "8px", overflow: "auto", opacity: loading ? 0.6 : 1, position: "relative" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+      <div className={`bg-bg-surface border border-border rounded-lg overflow-auto transition-opacity ${loading ? "opacity-60" : "opacity-100"}`}>
+        <table className="w-full border-collapse text-sm">
           <thead>
-            <tr style={{ backgroundColor: "#0f3460" }}>
-              <th style={thStyle}>Summary</th>
-              <th style={thStyle}>Framework</th>
-              <th style={thStyle}>Error Type</th>
-              <th style={thStyle}>Confidence</th>
-              <th style={thStyle}>Success</th>
-              <th style={thStyle}>Source</th>
-              <th style={thStyle}>Status</th>
-              <th style={thStyle}>Validated</th>
+            <tr className="bg-bg-elevated">
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Summary</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Framework</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Error Type</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Confidence</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Success</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Source</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Status</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Validated</th>
             </tr>
           </thead>
           <tbody>
             {solutions.length === 0 && !loading ? (
               <tr>
-                <td colSpan={8} style={{ padding: "24px", textAlign: "center", color: "#888" }}>
+                <td colSpan={8} className="px-4 py-6 text-center text-text-muted">
                   No solutions found
                 </td>
               </tr>
             ) : (
               solutions.map((sol) => (
-                <tr key={sol.id} style={{ borderBottom: "1px solid #0f3460" }}>
-                  <td style={tdStyle}>
+                <tr key={sol.id} className="border-t border-border hover:bg-bg-elevated/50">
+                  <td className="px-4 py-2.5 text-text-secondary">
                     <Link
                       to={`/solutions/${sol.id}`}
-                      style={{ color: "#a8dadc", textDecoration: "none" }}
+                      className="text-accent hover:text-accent-hover no-underline"
                     >
                       {sol.solution_summary.length > 80
                         ? sol.solution_summary.substring(0, 80) + "..."
                         : sol.solution_summary}
                     </Link>
                   </td>
-                  <td style={tdStyle}>
+                  <td className="px-4 py-2.5 text-text-secondary">
                     {sol.framework}
-                    <span style={{ color: "#888", fontSize: "0.75rem" }}> {sol.framework_version}</span>
+                    <span className="text-text-muted text-xs"> {sol.framework_version}</span>
                   </td>
-                  <td style={tdStyle}>{sol.error_type}</td>
-                  <td style={tdStyle}>
-                    <span style={{ color: confidenceColor(sol.confidence_score), fontFamily: "monospace", fontWeight: 600 }}>
+                  <td className="px-4 py-2.5 text-text-secondary">{sol.error_type}</td>
+                  <td className="px-4 py-2.5">
+                    <span className={`font-mono font-semibold ${confidenceClass(sol.confidence_score)}`}>
                       {sol.confidence_score.toFixed(2)}
                     </span>
                   </td>
-                  <td style={{ ...tdStyle, fontFamily: "monospace" }}>
+                  <td className="px-4 py-2.5 text-text-secondary font-mono">
                     {(sol.success_rate * 100).toFixed(0)}%
                   </td>
-                  <td style={tdStyle}><SourceBadge source={sol.source} /></td>
-                  <td style={tdStyle}><StatusBadge status={sol.status} /></td>
-                  <td style={{ ...tdStyle, fontSize: "0.8rem", color: "#888" }}>
+                  <td className="px-4 py-2.5 text-text-secondary"><SourceBadge source={sol.source} /></td>
+                  <td className="px-4 py-2.5 text-text-secondary"><StatusBadge status={sol.status} /></td>
+                  <td className="px-4 py-2.5 text-text-muted text-xs">
                     {sol.last_validated_at
                       ? new Date(sol.last_validated_at).toLocaleDateString()
                       : "—"}
@@ -177,70 +187,28 @@ export function SolutionsPage() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "12px", justifyContent: "center" }}>
+        <div className="flex items-center gap-2 mt-3 justify-center">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            style={pageBtnStyle}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium border-none cursor-pointer transition-colors bg-transparent text-text-secondary border border-border hover:bg-bg-elevated disabled:opacity-40 disabled:cursor-not-allowed"
           >
+            <ChevronLeft className="size-3.5" />
             Prev
           </button>
-          <span style={{ color: "#888", fontSize: "0.85rem" }}>
+          <span className="text-text-muted text-sm">
             Page {page} of {totalPages} ({total} total)
           </span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            style={pageBtnStyle}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium border-none cursor-pointer transition-colors bg-transparent text-text-secondary border border-border hover:bg-bg-elevated disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Next
+            <ChevronRight className="size-3.5" />
           </button>
         </div>
       )}
     </div>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  padding: "6px 10px",
-  backgroundColor: "#1a1a2e",
-  color: "#e0e0e0",
-  border: "1px solid #0f3460",
-  borderRadius: "4px",
-  fontSize: "0.85rem",
-};
-
-const thStyle: React.CSSProperties = {
-  textAlign: "left",
-  padding: "8px 12px",
-  fontWeight: 600,
-  color: "#a0a0b8",
-  fontSize: "0.75rem",
-  textTransform: "uppercase",
-  whiteSpace: "nowrap",
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: "8px 12px",
-  color: "#ccc",
-};
-
-const pageBtnStyle: React.CSSProperties = {
-  padding: "4px 12px",
-  backgroundColor: "#0f3460",
-  color: "#e0e0e0",
-  border: "none",
-  borderRadius: "4px",
-  cursor: "pointer",
-  fontSize: "0.85rem",
-};
-
-const retryStyle: React.CSSProperties = {
-  padding: "4px 8px",
-  backgroundColor: "#0f3460",
-  color: "#e0e0e0",
-  border: "none",
-  borderRadius: "4px",
-  cursor: "pointer",
-  marginLeft: "8px",
-};

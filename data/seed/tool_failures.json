@@ -1,0 +1,182 @@
+[
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ToolNotFoundError",
+        "error_code": "tool_not_found",
+        "tool_name": "search_web",
+        "operation": "tool_dispatch",
+        "severity": "blocking",
+        "details": "Tool 'search_web' is not registered in the agent's tool registry. Available tools: ['read_file', 'write_file', 'run_code']."
+      },
+      "environment": {
+        "framework": "langchain",
+        "framework_version": "0.3.9",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "LangChain agent performing web research with search tool"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Register the missing tool in the agent's tool list before execution",
+        "solution_steps": [
+          "Verify the tool is imported correctly: from langchain_community.tools import TavilySearchResults",
+          "Add the tool to the agent's tool list: tools = [TavilySearchResults(max_results=5), ...existing_tools]",
+          "Ensure the tool name matches what the LLM expects: set the tool's name attribute to 'search_web' if the prompt references that name",
+          "If using a custom tool, verify it inherits from BaseTool and has the required name, description, and _run method",
+          "Rebuild the agent with the updated tool list: agent = create_react_agent(llm, tools, prompt)"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.93
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ToolInputValidationError",
+        "error_code": "invalid_arguments",
+        "tool_name": "sql_query",
+        "operation": "tool_execution",
+        "severity": "blocking",
+        "details": "Validation error for tool 'sql_query': field 'query' is required but was not provided. Received arguments: {'sql': 'SELECT * FROM users LIMIT 10'}."
+      },
+      "environment": {
+        "framework": "crewai",
+        "framework_version": "0.80.1",
+        "llm": "claude-3.5-sonnet",
+        "runtime": "python3.11"
+      },
+      "goal_state": "CrewAI data analyst agent querying SQL database"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Align tool argument schema with LLM's expected parameter names",
+        "solution_steps": [
+          "Review the tool's input schema and compare the expected field names with what the LLM is generating",
+          "Update the tool's args_schema to accept common aliases: add 'sql' as an alias for 'query' using Pydantic Field(alias='sql')",
+          "Improve the tool description to clearly specify the expected parameter names: description='Execute a SQL query. Pass the SQL string as the query parameter.'",
+          "Add parameter name examples in the tool description to guide the LLM's output format",
+          "Implement an input normalization layer that maps common LLM argument naming patterns to the tool's expected schema"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.87
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "SandboxExecutionError",
+        "error_code": "permission_denied",
+        "tool_name": "code_interpreter",
+        "operation": "tool_execution",
+        "severity": "blocking",
+        "details": "Code execution blocked by sandbox policy: attempted to access /etc/passwd. File system access is restricted to /tmp/workspace."
+      },
+      "environment": {
+        "framework": "openai-agents",
+        "framework_version": "1.0.4",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Agent autonomously writing and executing Python code for data analysis"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Configure sandbox permissions and guide LLM to use allowed paths",
+        "solution_steps": [
+          "Add explicit path constraints in the system prompt: 'All file operations must use the /tmp/workspace directory. Never access system files.'",
+          "Configure the sandbox allowlist to include necessary directories: sandbox.allow_paths(['/tmp/workspace', '/tmp/data'])",
+          "Pre-stage any required data files in the sandbox workspace before starting the agent",
+          "Implement a path rewriting middleware that automatically redirects absolute paths to the workspace directory",
+          "Add a pre-execution validator that rejects code containing references to sensitive system paths"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.90
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ToolExecutionError",
+        "error_code": "subprocess_failed",
+        "tool_name": "bash_tool",
+        "operation": "tool_execution",
+        "severity": "blocking",
+        "details": "Command 'pip install pandas && python analyze.py' failed with exit code 1: ERROR: Could not find a version that satisfies the requirement pandas (from versions: none)"
+      },
+      "environment": {
+        "framework": "autogen",
+        "framework_version": "0.4.7",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "AutoGen coding agent installing dependencies and running analysis scripts"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Pre-install required packages and configure the execution environment",
+        "solution_steps": [
+          "Create a requirements.txt with all packages the agent might need and pre-install them in the execution environment",
+          "Configure AutoGen's code execution with a Docker container that has common data science packages pre-installed",
+          "Set the code_execution_config to use a virtual environment: code_execution_config={'work_dir': 'workspace', 'use_docker': 'python:3.12-slim'}",
+          "Add a pre-execution hook that checks for missing imports and installs them before running the code",
+          "Provide the agent with a list of available packages in the system prompt to avoid unnecessary install attempts"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.85
+      },
+      {
+        "solution_summary": "Enable network access in the sandbox for pip installs",
+        "solution_steps": [
+          "If using Docker-based execution, ensure the container has network access: docker run --network=host",
+          "Configure pip to use a local package mirror if external network access is restricted",
+          "Use AutoGen's DockerCommandLineCodeExecutor with network mode enabled for package installation"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.78
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ToolSchemaError",
+        "error_code": "invalid_function_schema",
+        "tool_name": "get_weather",
+        "operation": "tool_registration",
+        "severity": "blocking",
+        "details": "Invalid function schema for 'get_weather': property 'location' has type 'Location' which is not a valid JSON Schema type. Expected one of: string, number, integer, boolean, array, object."
+      },
+      "environment": {
+        "framework": "openai-agents",
+        "framework_version": "1.0.1",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Register custom tool with complex Pydantic input types"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Convert complex Pydantic types to valid JSON Schema for tool registration",
+        "solution_steps": [
+          "Replace custom type references with inline object definitions: use {'type': 'object', 'properties': {'city': {'type': 'string'}, 'country': {'type': 'string'}}} instead of referencing the Location class",
+          "Use Pydantic's model_json_schema() method to generate valid JSON Schema from your models and pass that to the tool definition",
+          "Ensure all type annotations use JSON-compatible primitives: str, int, float, bool, list, dict",
+          "If using the @tool decorator, add explicit type hints that map to JSON Schema types on all parameters"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.86
+      }
+    ]
+  }
+]

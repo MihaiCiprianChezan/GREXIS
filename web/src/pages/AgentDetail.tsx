@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
+import { ArrowLeft, ShieldBan, ShieldCheck, RotateCcw } from "lucide-react";
 import { api } from "@/lib/api";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -57,39 +58,51 @@ export function AgentDetailPage() {
   };
 
   if (loading) {
-    return <div><h1 style={{ margin: "0 0 16px" }}>Agent Detail</h1><p style={{ color: "#888" }}>Loading...</p></div>;
+    return (
+      <div>
+        <h1 className="text-xl font-semibold tracking-tight text-text-primary mb-4">Agent Detail</h1>
+        <p className="text-text-muted text-sm">Loading...</p>
+      </div>
+    );
   }
 
   if (error || !agent) {
     return (
       <div>
-        <h1 style={{ margin: "0 0 16px" }}>Agent Detail</h1>
-        <p style={{ color: "#d62828" }}>{error || "Not found"}</p>
-        <Link to="/agents" style={{ color: "#a8dadc" }}>Back to agents</Link>
+        <h1 className="text-xl font-semibold tracking-tight text-text-primary mb-4">Agent Detail</h1>
+        <p className="text-danger text-sm mb-3">{error || "Not found"}</p>
+        <Link to="/agents" className="text-accent text-sm hover:underline">Back to agents</Link>
       </div>
     );
   }
 
   return (
     <div>
-      <Link to="/agents" style={{ color: "#a8dadc", textDecoration: "none", fontSize: "0.85rem" }}>&larr; Agents</Link>
+      <Link to="/agents" className="inline-flex items-center gap-1 text-accent text-sm no-underline hover:underline mb-4">
+        <ArrowLeft size={14} />
+        Agents
+      </Link>
 
       {toast && (
-        <div style={{ position: "fixed", top: "16px", right: "16px", backgroundColor: "#2d6a4f", color: "#fff", padding: "10px 20px", borderRadius: "6px", zIndex: 999 }}>
+        <div className="fixed top-4 right-4 bg-success text-white px-5 py-2.5 rounded-md z-50 text-sm">
           {toast}
         </div>
       )}
 
-      <div style={{ margin: "16px 0", display: "flex", gap: "12px", alignItems: "center" }}>
-        <h1 style={{ margin: 0, fontSize: "1.2rem", fontFamily: "monospace" }}>{agent.token_hash.substring(0, 24)}...</h1>
-        <span style={{ padding: "2px 10px", borderRadius: "10px", fontSize: "0.8rem", backgroundColor: "#0f3460", color: "#a8dadc" }}>
+      <div className="my-4 flex gap-3 items-center">
+        <h1 className="text-xl font-semibold tracking-tight text-text-primary font-mono m-0">
+          {agent.token_hash.substring(0, 24)}...
+        </h1>
+        <span className="px-2.5 py-0.5 rounded-full text-xs bg-bg-elevated text-accent border border-border">
           {agent.tier}
         </span>
-        {agent.is_banned && <span style={{ color: "#d62828", fontWeight: 700 }}>BANNED</span>}
+        {agent.is_banned && (
+          <span className="text-danger font-bold text-sm">BANNED</span>
+        )}
       </div>
 
-      <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
-        <div style={{ flex: "2 1 400px" }}>
+      <div className="flex gap-6 flex-wrap">
+        <div className="flex-[2_1_400px]">
           {/* Identity */}
           <Section title="Identity">
             <KV label="Tier" value={agent.tier} />
@@ -116,28 +129,28 @@ export function AgentDetailPage() {
           {/* Submitted solutions */}
           <Section title="Submitted Solutions">
             {(!agent.solutions || agent.solutions.length === 0) ? (
-              <p style={{ color: "#888", margin: 0, fontSize: "0.85rem" }}>No solutions</p>
+              <p className="text-text-muted m-0 text-sm">No solutions</p>
             ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8rem" }}>
+              <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr>
-                    <th style={thSmall}>Summary</th>
-                    <th style={thSmall}>Confidence</th>
-                    <th style={thSmall}>Status</th>
-                    <th style={thSmall}>Created</th>
+                    <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-3 py-1.5 text-left border-b border-border">Summary</th>
+                    <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-3 py-1.5 text-left border-b border-border">Confidence</th>
+                    <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-3 py-1.5 text-left border-b border-border">Status</th>
+                    <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-3 py-1.5 text-left border-b border-border">Created</th>
                   </tr>
                 </thead>
                 <tbody>
                   {agent.solutions.map((sol) => (
-                    <tr key={sol.id} style={{ borderBottom: "1px solid #0f3460" }}>
-                      <td style={tdSmall}>
-                        <Link to={`/solutions/${sol.id}`} style={{ color: "#a8dadc", textDecoration: "none" }}>
+                    <tr key={sol.id} className="border-t border-border hover:bg-bg-elevated/50">
+                      <td className="px-3 py-1.5 text-text-secondary">
+                        <Link to={`/solutions/${sol.id}`} className="text-accent no-underline hover:underline">
                           {sol.solution_summary.substring(0, 50)}...
                         </Link>
                       </td>
-                      <td style={{ ...tdSmall, fontFamily: "monospace" }}>{sol.confidence_score.toFixed(2)}</td>
-                      <td style={tdSmall}><StatusBadge status={sol.status} /></td>
-                      <td style={{ ...tdSmall, color: "#888" }}>{new Date(sol.created_at).toLocaleDateString()}</td>
+                      <td className="px-3 py-1.5 text-text-secondary font-mono">{sol.confidence_score.toFixed(2)}</td>
+                      <td className="px-3 py-1.5 text-text-secondary"><StatusBadge status={sol.status} /></td>
+                      <td className="px-3 py-1.5 text-text-muted text-xs">{new Date(sol.created_at).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -147,20 +160,32 @@ export function AgentDetailPage() {
         </div>
 
         {/* Actions */}
-        <div style={{ flex: "1 1 200px", minWidth: "200px" }}>
-          <div style={{ position: "sticky", top: "24px" }}>
+        <div className="flex-[1_1_200px] min-w-[200px]">
+          <div className="sticky top-6">
             <Section title="Actions">
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div className="flex flex-col gap-2">
                 {agent.is_banned ? (
-                  <button onClick={() => setModalAction("unban")} style={{ ...actionBtn, backgroundColor: "#2d6a4f" }}>
+                  <button
+                    onClick={() => setModalAction("unban")}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-success text-white rounded-md text-sm font-semibold border-none cursor-pointer hover:brightness-110 transition-colors"
+                  >
+                    <ShieldCheck size={14} />
                     Unban token
                   </button>
                 ) : (
-                  <button onClick={() => setModalAction("ban")} style={{ ...actionBtn, backgroundColor: "#d62828" }}>
+                  <button
+                    onClick={() => setModalAction("ban")}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-danger text-white rounded-md text-sm font-semibold border-none cursor-pointer hover:brightness-110 transition-colors"
+                  >
+                    <ShieldBan size={14} />
                     Ban token
                   </button>
                 )}
-                <button onClick={() => setModalAction("reset")} style={{ ...actionBtn, backgroundColor: "#0f3460" }}>
+                <button
+                  onClick={() => setModalAction("reset")}
+                  className="flex items-center justify-center gap-2 bg-transparent text-text-secondary border border-border hover:bg-bg-elevated rounded-md px-4 py-2 text-sm cursor-pointer transition-colors"
+                >
+                  <RotateCcw size={14} />
                   Reset rate limit
                 </button>
               </div>
@@ -184,8 +209,8 @@ export function AgentDetailPage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ backgroundColor: "#16213e", border: "1px solid #0f3460", borderRadius: "8px", padding: "16px", marginBottom: "16px" }}>
-      <h3 style={{ margin: "0 0 12px", fontSize: "0.9rem", color: "#a0a0b8", textTransform: "uppercase", letterSpacing: "0.5px" }}>{title}</h3>
+    <div className="bg-bg-surface border border-border rounded-lg p-4 mb-4">
+      <h3 className="m-0 mb-3 text-sm font-semibold text-text-secondary uppercase tracking-wide">{title}</h3>
       {children}
     </div>
   );
@@ -193,13 +218,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function KV({ label, value }: { label: string; value: string | null }) {
   return (
-    <div style={{ marginBottom: "6px" }}>
-      <span style={{ color: "#888", fontSize: "0.8rem" }}>{label}: </span>
-      <span style={{ color: "#ccc", fontSize: "0.85rem" }}>{value || "—"}</span>
+    <div className="mb-1.5">
+      <span className="text-text-muted text-xs">{label}: </span>
+      <span className="text-text-primary text-sm font-mono">{value || "—"}</span>
     </div>
   );
 }
-
-const thSmall: React.CSSProperties = { textAlign: "left", padding: "6px 8px", fontWeight: 600, color: "#a0a0b8", fontSize: "0.7rem", textTransform: "uppercase", borderBottom: "1px solid #0f3460" };
-const tdSmall: React.CSSProperties = { padding: "6px 8px", color: "#ccc" };
-const actionBtn: React.CSSProperties = { padding: "8px 16px", color: "#e0e0e0", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.85rem", fontWeight: 600 };

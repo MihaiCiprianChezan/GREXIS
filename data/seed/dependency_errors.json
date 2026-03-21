@@ -1,0 +1,172 @@
+[
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ImportError",
+        "error_code": "module_not_found",
+        "tool_name": "python.import",
+        "operation": "module_import",
+        "severity": "blocking",
+        "details": "ModuleNotFoundError: No module named 'langchain_community'. The 'langchain-community' package is required but not installed."
+      },
+      "environment": {
+        "framework": "langchain",
+        "framework_version": "0.3.10",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Import LangChain community tools for agent setup"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Install the missing langchain-community package and verify the package ecosystem",
+        "solution_steps": [
+          "Install the package: pip install langchain-community",
+          "Since LangChain 0.2+, community integrations were split into separate packages. Also install provider-specific packages as needed: pip install langchain-openai langchain-anthropic",
+          "Verify the installation: python -c 'import langchain_community; print(langchain_community.__version__)'",
+          "Check for version compatibility: pip install 'langchain-community>=0.3.0,<0.4.0' to match your langchain version",
+          "Update all langchain packages together to avoid version mismatches: pip install --upgrade langchain langchain-core langchain-community"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.95
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "VersionConflictError",
+        "error_code": "dependency_conflict",
+        "tool_name": "pip",
+        "operation": "package_install",
+        "severity": "blocking",
+        "details": "ERROR: pip's dependency resolver found conflicting requirements: crewai 0.80.4 requires pydantic>=2.4,<3.0 but autogen-agentchat 0.4.7 requires pydantic>=1.10,<2.0. Cannot install both packages."
+      },
+      "environment": {
+        "framework": "crewai",
+        "framework_version": "0.80.4",
+        "llm": "claude-3.5-sonnet",
+        "runtime": "python3.11"
+      },
+      "goal_state": "Use both CrewAI and AutoGen in the same Python project"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Isolate conflicting frameworks in separate virtual environments or use compatible versions",
+        "solution_steps": [
+          "Check if a newer version of autogen supports Pydantic v2: pip install 'autogen-agentchat>=0.4.7' may resolve the conflict",
+          "If no compatible versions exist, run each framework in a separate virtual environment and communicate via an API or message queue",
+          "Use Docker containers to isolate each framework: one container for CrewAI, another for AutoGen, connected via HTTP or gRPC",
+          "Check the autogen migration guide for Pydantic v2 support: newer versions of autogen (0.4.x) have moved to Pydantic v2",
+          "As a temporary workaround, pin pydantic to v2 and test if autogen works with compatibility shims: pip install 'pydantic>=2.4' and test thoroughly"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.82
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ImportError",
+        "error_code": "attribute_not_found",
+        "tool_name": "python.import",
+        "operation": "module_import",
+        "severity": "blocking",
+        "details": "ImportError: cannot import name 'ChatOpenAI' from 'langchain.chat_models'. This class has been moved to 'langchain_openai'. Please update your import."
+      },
+      "environment": {
+        "framework": "langchain",
+        "framework_version": "0.3.12",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Migrate LangChain project from v0.1 to v0.3 import paths"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Update import paths to match the LangChain v0.3 package structure",
+        "solution_steps": [
+          "Replace 'from langchain.chat_models import ChatOpenAI' with 'from langchain_openai import ChatOpenAI'",
+          "Install the provider package: pip install langchain-openai",
+          "Use the LangChain migration CLI tool to automate import updates: langchain-cli migrate --diff to preview changes, then langchain-cli migrate to apply",
+          "Common import changes: langchain.embeddings.OpenAIEmbeddings -> langchain_openai.OpenAIEmbeddings, langchain.llms.Anthropic -> langchain_anthropic.ChatAnthropic",
+          "Check the LangChain migration guide at python.langchain.com/docs/versions/migrating_chains for a complete mapping of old to new imports"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.96
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "RuntimeError",
+        "error_code": "binary_incompatible",
+        "tool_name": "chromadb",
+        "operation": "module_import",
+        "severity": "blocking",
+        "details": "RuntimeError: Failed to load chromadb native extensions. The installed binary was built for glibc 2.35 but this system has glibc 2.31. Rebuild from source or use a compatible binary."
+      },
+      "environment": {
+        "framework": "autogen",
+        "framework_version": "0.4.5",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Set up ChromaDB vector store for AutoGen retrieval-augmented agents"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Install a compatible binary or rebuild from source for the target platform",
+        "solution_steps": [
+          "Check your glibc version: ldd --version",
+          "Try installing an older version of chromadb that was built for your glibc: pip install 'chromadb==0.4.24'",
+          "Build from source: pip install chromadb --no-binary chromadb (requires build tools: apt install build-essential)",
+          "Alternatively, use a Docker container based on a newer Ubuntu (22.04+) that includes glibc 2.35+",
+          "Consider using an alternative vector store that does not require native extensions: pip install qdrant-client for Qdrant or use FAISS with faiss-cpu"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.84
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ImportError",
+        "error_code": "optional_dependency_missing",
+        "tool_name": "python.import",
+        "operation": "module_import",
+        "severity": "blocking",
+        "details": "ImportError: To use the OpenAI Agents SDK, you need the 'openai-agents' package. Install it with: pip install openai-agents[all]"
+      },
+      "environment": {
+        "framework": "openai-agents",
+        "framework_version": "1.0.0",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Set up OpenAI Agents SDK with all optional features"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Install the package with all optional dependencies using extras syntax",
+        "solution_steps": [
+          "Install with all optional dependencies: pip install 'openai-agents[all]'",
+          "For minimal installation, install only what you need: pip install openai-agents for core, pip install 'openai-agents[viz]' for visualization",
+          "Verify the installation: python -c 'from agents import Agent; print(\"OK\")'",
+          "If using a requirements.txt, add the extras: openai-agents[all]>=1.0.0,<2.0.0",
+          "Ensure Python 3.10+ is being used as the SDK requires modern Python features"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.93
+      }
+    ]
+  }
+]

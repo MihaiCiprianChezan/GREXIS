@@ -16,6 +16,13 @@ class AgentToken:
     multiplier: float
 
 
+class BannedTokenError(Exception):
+    """Raised when a banned agent token attempts to use MCP tools."""
+    def __init__(self, token_hash: str):
+        self.token_hash = token_hash
+        super().__init__(f"Token {token_hash[:8]}... is banned")
+
+
 def hash_token(raw: str) -> str:
     """Return the SHA-256 hex digest of a raw token string."""
     return hashlib.sha256(raw.encode()).hexdigest()
@@ -52,6 +59,8 @@ async def resolve_agent_token(db, redis, agent_token: str | None) -> AgentToken 
     # Check Redis cache first
     cached = await redis.hgetall(f"rep:{token_hash}")
     if cached and cached.get("tier"):
+        if cached.get("is_banned") == "true":
+            raise BannedTokenError(token_hash)
         return AgentToken(
             hash=token_hash,
             tier=cached["tier"],
@@ -69,11 +78,22 @@ async def resolve_agent_token(db, redis, agent_token: str | None) -> AgentToken 
         await create_token_record(db, token_hash)
         return AgentToken(hash=token_hash, tier="token_only", multiplier=1.0)
 
+    # Enforce ban
+    if record["is_banned"]:
+        # Cache the ban so subsequent calls are fast
+        await redis.hmset(f"rep:{token_hash}", {
+            "tier": record["tier"],
+            "multiplier": str(record["rate_limit_multiplier"]),
+            "is_banned": "true",
+        })
+        raise BannedTokenError(token_hash)
+
     # Populate Redis cache
     await redis.hmset(f"rep:{token_hash}", {
         "tier": record["tier"],
         "multiplier": str(record["rate_limit_multiplier"]),
         "success_rate": str(record["submitted_solutions_success_rate"]),
+        "is_banned": "false",
     })
 
     return AgentToken(

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import type { FailureCluster } from "@/types/api";
+import { Zap, CheckCircle, XCircle } from "lucide-react";
 
 export function ClustersPage() {
   const [clusters, setClusters] = useState<FailureCluster[]>([]);
@@ -65,93 +66,70 @@ export function ClustersPage() {
   return (
     <div>
       {toast && (
-        <div style={{ position: "fixed", top: "16px", right: "16px", backgroundColor: "#2d6a4f", color: "#fff", padding: "10px 20px", borderRadius: "6px", zIndex: 999 }}>
+        <div className="fixed top-4 right-4 bg-success text-white px-5 py-2.5 rounded-lg shadow-md z-[999] text-sm">
           {toast}
         </div>
       )}
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-        <h1 style={{ margin: 0 }}>Failure Clusters</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-xl font-semibold tracking-tight text-text-primary">Failure Clusters</h1>
         <button
           onClick={handleTrigger}
           disabled={triggering}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: triggering ? "#555" : "#0f3460",
-            color: "#e0e0e0",
-            border: "none",
-            borderRadius: "4px",
-            cursor: triggering ? "not-allowed" : "pointer",
-            fontWeight: 600,
-          }}
+          className="px-4 py-2 bg-accent text-white rounded-md text-sm font-medium border-none cursor-pointer hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
+          <Zap size={14} />
           {triggering ? "Triggering..." : "Trigger Clustering"}
         </button>
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: "4px", marginBottom: "16px" }}>
+      <div className="flex gap-1 mb-4">
         {(["pending", "accepted"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            style={{
-              padding: "6px 16px",
-              backgroundColor: tab === t ? "#0f3460" : "transparent",
-              color: tab === t ? "#e0e0e0" : "#888",
-              border: "1px solid #0f3460",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "0.85rem",
-              textTransform: "capitalize",
-            }}
+            className={`px-4 py-2 rounded-md text-sm font-medium capitalize transition-colors ${
+              tab === t
+                ? "bg-accent-muted text-accent"
+                : "text-text-secondary hover:bg-bg-elevated"
+            }`}
           >
             {t}
           </button>
         ))}
       </div>
 
-      {loading && <p style={{ color: "#888" }}>Loading...</p>}
-      {error && <p style={{ color: "#d62828" }}>{error}</p>}
+      {loading && <p className="text-text-muted">Loading...</p>}
+      {error && <p className="text-danger">{error}</p>}
 
       {!loading && filtered.length === 0 && (
-        <p style={{ color: "#888" }}>No {tab} clusters</p>
+        <p className="text-text-muted">No {tab} clusters</p>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "16px" }}>
+      <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))" }}>
         {filtered.map((cluster) => (
           <div
             key={cluster.id}
-            style={{
-              backgroundColor: "#16213e",
-              border: "1px solid #0f3460",
-              borderRadius: "8px",
-              padding: "16px",
-            }}
+            className="bg-bg-surface border border-border rounded-lg p-5"
           >
-            <h3 style={{ margin: "0 0 8px", fontSize: "1rem", color: "#e0e0e0" }}>
+            <h3 className="text-text-primary font-medium text-sm mb-2">
               {cluster.cluster_label}
             </h3>
             {cluster.error_type && (
-              <p style={{ margin: "0 0 6px", color: "#888", fontSize: "0.8rem" }}>
-                Error: <span style={{ color: "#ccc" }}>{cluster.error_type}</span>
+              <p className="text-text-muted text-xs mb-1.5">
+                Error: <span className="text-text-secondary">{cluster.error_type}</span>
               </p>
             )}
-            <p style={{ margin: "0 0 8px", color: "#a8dadc", fontSize: "0.9rem", fontFamily: "monospace" }}>
+            <p className="text-accent text-sm font-mono mb-2">
               {cluster.member_count} members
             </p>
             {cluster.keywords && cluster.keywords.length > 0 && (
-              <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "12px" }}>
+              <div className="flex gap-1 flex-wrap mb-3">
                 {cluster.keywords.map((kw, i) => (
                   <span
                     key={i}
-                    style={{
-                      padding: "2px 8px",
-                      backgroundColor: "#1a1a2e",
-                      borderRadius: "10px",
-                      fontSize: "0.7rem",
-                      color: "#a0a0b8",
-                    }}
+                    className="bg-bg-elevated text-text-secondary text-xs px-2 py-0.5 rounded-full"
                   >
                     {kw}
                   </span>
@@ -159,17 +137,19 @@ export function ClustersPage() {
               </div>
             )}
             {tab === "pending" && (
-              <div style={{ display: "flex", gap: "8px" }}>
+              <div className="flex gap-2">
                 <button
                   onClick={() => handleAccept(cluster.id)}
-                  style={{ padding: "6px 14px", backgroundColor: "#2d6a4f", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.8rem" }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-success text-white border-none rounded-md cursor-pointer text-xs font-medium hover:brightness-110 transition-colors"
                 >
+                  <CheckCircle size={12} />
                   Accept
                 </button>
                 <button
                   onClick={() => handleDismiss(cluster.id)}
-                  style={{ padding: "6px 14px", backgroundColor: "#555", color: "#ccc", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.8rem" }}
+                  className="bg-transparent text-text-secondary border border-border hover:bg-bg-elevated rounded-md px-3 py-1.5 text-xs cursor-pointer transition-colors flex items-center gap-1.5"
                 >
+                  <XCircle size={12} />
                   Dismiss
                 </button>
               </div>

@@ -132,31 +132,29 @@ async def run_clustering_job() -> None:
         if not member_indices:
             continue
 
-        member_problem_ids = [problem_ids[i] for i in member_indices]
         keywords = cluster_keywords.get(cluster_id, [])
-        label = ", ".join(keywords) if keywords else f"cluster-{cluster_id}"
+        cluster_label = ", ".join(keywords) if keywords else f"cluster-{cluster_id}"
+        member_count = len(member_indices)
+
+        # Most common error_type among cluster members
+        member_error_types = [rows[i]["error_type"] for i in member_indices if rows[i]["error_type"]]
+        if member_error_types:
+            error_type = max(set(member_error_types), key=member_error_types.count)
+        else:
+            error_type = None
 
         cluster_uuid = str(uuid.uuid4())
         await postgres.execute(
             """
-            INSERT INTO grexis.failure_clusters (id, label, keywords, problem_ids, created_at)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO grexis.failure_clusters (id, cluster_label, error_type, member_count, keywords, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6)
             """,
             cluster_uuid,
-            label,
+            cluster_label,
+            error_type,
+            member_count,
             keywords,
-            member_problem_ids,
             now,
-        )
-
-    # Update problems with their cluster assignment
-    for i, problem_id in enumerate(problem_ids):
-        await postgres.execute(
-            """
-            UPDATE grexis.problems SET cluster_id = $1 WHERE id = $2
-            """,
-            str(labels[i]),
-            problem_id,
         )
 
     logger.info(

@@ -1,0 +1,134 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
+@theme {
+  /* ── Typography ── */
+  --font-sans: "Geist Variable", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono Variable", "Fira Code", monospace;
+
+  /* ── Colors: Surfaces ── */
+  --color-bg-base: oklch(0.145 0 0);
+  --color-bg-surface: oklch(0.185 0.005 280);
+  --color-bg-elevated: oklch(0.225 0.008 280);
+  --color-bg-overlay: oklch(0.28 0.01 280);
+
+  /* ── Colors: Text ── */
+  --color-text-primary: oklch(0.96 0 0);
+  --color-text-secondary: oklch(0.68 0 0);
+  --color-text-muted: oklch(0.50 0 0);
+
+  /* ── Colors: Borders ── */
+  --color-border: oklch(1 0 0 / 10%);
+  --color-border-strong: oklch(1 0 0 / 18%);
+
+  /* ── Colors: Accent ── */
+  --color-accent: oklch(0.65 0.18 280);
+  --color-accent-hover: oklch(0.72 0.18 280);
+  --color-accent-muted: oklch(0.65 0.18 280 / 15%);
+
+  /* ── Colors: Semantic ── */
+  --color-success: oklch(0.65 0.17 155);
+  --color-success-muted: oklch(0.65 0.17 155 / 15%);
+  --color-warning: oklch(0.78 0.15 75);
+  --color-warning-muted: oklch(0.78 0.15 75 / 15%);
+  --color-danger: oklch(0.65 0.2 25);
+  --color-danger-muted: oklch(0.65 0.2 25 / 15%);
+  --color-info: oklch(0.65 0.14 230);
+  --color-info-muted: oklch(0.65 0.14 230 / 15%);
+
+  /* ── Radius ── */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 0 1px oklch(0.65 0.18 280 / 30%), 0 0 16px oklch(0.65 0.18 280 / 12%);
+
+  /* ── Layout ── */
+  --sidebar-width: 240px;
+  --sidebar-collapsed: 56px;
+}
+
+/* ── Base Styles ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: tabular-nums;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(1 0 0 / 12%);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(1 0 0 / 20%);
+}
+
+/* ── Focus ring ── */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ── Skeleton shimmer ── */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-md);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    oklch(1 0 0 / 5%) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.8s infinite;
+}
+
+/* ── Transitions ── */
+.transition-colors {
+  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+
+/* ── Selection ── */
+::selection {
+  background: oklch(0.65 0.18 280 / 30%);
+}

@@ -1,0 +1,149 @@
+[
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ContextWindowExceededError",
+        "error_code": "context_length_exceeded",
+        "tool_name": "openai.ChatCompletion",
+        "operation": "llm_call",
+        "severity": "blocking",
+        "details": "This model's maximum context length is 128000 tokens. However, your messages resulted in 134522 tokens. Please reduce the length of the messages."
+      },
+      "environment": {
+        "framework": "langchain",
+        "framework_version": "0.3.12",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Run long-running LangChain agent with extensive conversation history"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Implement conversation buffer window memory to limit context size",
+        "solution_steps": [
+          "Replace ConversationBufferMemory with ConversationBufferWindowMemory(k=20) to keep only the last 20 message exchanges",
+          "Add a ConversationSummaryMemory as a secondary store that summarizes older messages using a cheaper model like gpt-4o-mini",
+          "Implement a token counting middleware using tiktoken to monitor context size before each LLM call",
+          "Set a safety threshold at 80% of the context window (102400 tokens) and trigger summarization when exceeded",
+          "Use LangChain's trim_messages utility to automatically trim the oldest messages when the window is full"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.91
+      },
+      {
+        "solution_summary": "Migrate to a model with a larger context window",
+        "solution_steps": [
+          "Switch to claude-3.5-sonnet which supports 200K tokens, or gemini-1.5-pro which supports 1M tokens",
+          "Update the LangChain ChatModel instantiation to use the new model provider",
+          "Note that larger context windows may increase latency and cost, so combine with summarization for optimal results"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.80
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "OutOfMemoryError",
+        "error_code": "OOM",
+        "tool_name": "chromadb.Collection",
+        "operation": "vector_store_query",
+        "severity": "blocking",
+        "details": "MemoryError: Unable to allocate 8.5 GiB for embedding matrix. System has 7.8 GiB available."
+      },
+      "environment": {
+        "framework": "crewai",
+        "framework_version": "0.80.4",
+        "llm": "claude-3.5-sonnet",
+        "runtime": "python3.11"
+      },
+      "goal_state": "Query large vector store with 2M+ documents for RAG-based research"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Switch to a disk-backed or client-server vector store to reduce memory usage",
+        "solution_steps": [
+          "Migrate from in-memory ChromaDB to persistent mode: chroma_client = chromadb.PersistentClient(path='/data/chroma_db')",
+          "For larger datasets, switch to a dedicated vector database like Qdrant, Weaviate, or Pinecone that handles large collections without loading everything into memory",
+          "If staying with ChromaDB, use the client-server architecture: run ChromaDB as a separate service and connect via HTTP client",
+          "Implement pagination for vector search results: query with limit=100 instead of retrieving all matching documents",
+          "Use dimensionality reduction (PCA or random projection) to reduce embedding size from 1536 to 512 dimensions, cutting memory by 66%"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.88
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "TruncationWarning",
+        "error_code": "input_truncated",
+        "tool_name": "anthropic.Messages",
+        "operation": "llm_call",
+        "severity": "degraded",
+        "details": "Input was truncated to fit within the 200000 token context window. 35% of tool output was dropped. Agent may produce incomplete or inaccurate results."
+      },
+      "environment": {
+        "framework": "autogen",
+        "framework_version": "0.4.5",
+        "llm": "claude-3.5-sonnet",
+        "runtime": "python3.12"
+      },
+      "goal_state": "AutoGen coding agent reviewing large codebase and generating test suite"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Implement selective context loading to include only relevant code segments",
+        "solution_steps": [
+          "Instead of loading entire files, use AST parsing to extract only the functions and classes relevant to the current task",
+          "Implement a two-pass approach: first pass identifies relevant files using grep or embeddings, second pass loads only those sections",
+          "Configure AutoGen's message transforms to compress code blocks by removing comments and blank lines before sending to the LLM",
+          "Use a retrieval-augmented approach: store code in a vector database and retrieve only the most relevant snippets per query",
+          "Set up a hierarchical summarization pipeline that creates file-level and module-level summaries for navigation"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.83
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "TokenBudgetExceededError",
+        "error_code": "max_tokens_exceeded",
+        "tool_name": "openai.ChatCompletion",
+        "operation": "agent_loop",
+        "severity": "degraded",
+        "details": "Agent consumed 450000 total tokens across 12 iterations, exceeding the configured budget of 400000 tokens. Agent loop terminated early."
+      },
+      "environment": {
+        "framework": "openai-agents",
+        "framework_version": "1.0.3",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Complete multi-step data pipeline with budget-constrained token usage"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Optimize token usage with caching and progressive summarization",
+        "solution_steps": [
+          "Enable prompt caching to avoid re-sending identical system prompts and tool definitions on each iteration",
+          "Implement progressive summarization: after every 3 iterations, summarize the conversation history into a compact state representation",
+          "Use a cheaper model (gpt-4o-mini) for intermediate reasoning steps and reserve gpt-4o for final synthesis",
+          "Set per-iteration token limits: max_tokens=2048 for reasoning steps, max_tokens=4096 for final output",
+          "Add a token usage callback that logs per-iteration consumption to identify which steps are most expensive"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.86
+      }
+    ]
+  }
+]

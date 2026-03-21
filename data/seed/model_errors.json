@@ -1,0 +1,173 @@
+[
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ModelNotFoundError",
+        "error_code": "model_not_found",
+        "tool_name": "openai.ChatCompletion",
+        "operation": "llm_call",
+        "severity": "blocking",
+        "details": "The model 'gpt-4-turbo' does not exist. Did you mean 'gpt-4-turbo-2024-04-09'? Available models can be listed via the /v1/models endpoint."
+      },
+      "environment": {
+        "framework": "langchain",
+        "framework_version": "0.3.8",
+        "llm": "gpt-4-turbo",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Initialize LangChain agent with specific GPT-4 model variant"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Use the correct model identifier and implement a model alias mapping",
+        "solution_steps": [
+          "Check available models via the API: curl https://api.openai.com/v1/models -H 'Authorization: Bearer $OPENAI_API_KEY' | jq '.data[].id'",
+          "Use the canonical model name: replace 'gpt-4-turbo' with 'gpt-4-turbo-2024-04-09' or the current alias 'gpt-4-turbo'",
+          "Create a model alias configuration that maps friendly names to exact model IDs for easy updates",
+          "Subscribe to OpenAI's model deprecation announcements to stay ahead of model name changes",
+          "Implement a fallback chain: try the preferred model first, then fall back to alternatives"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.90
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ContentFilterError",
+        "error_code": "content_policy_violation",
+        "tool_name": "openai.ChatCompletion",
+        "operation": "llm_call",
+        "severity": "blocking",
+        "details": "The response was filtered due to the prompt triggering Azure OpenAI's content management policy. Reason: violence. Policy: Azure default content filter."
+      },
+      "environment": {
+        "framework": "autogen",
+        "framework_version": "0.4.5",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "AutoGen agent analyzing security incident reports containing threat descriptions"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Adjust content filter settings and restructure prompts to avoid false positives",
+        "solution_steps": [
+          "If using Azure OpenAI, request a content filter exception through the Azure portal for your specific use case",
+          "Restructure the prompt to use clinical and technical language instead of graphic descriptions",
+          "Add a system message preamble explaining the professional security analysis context: 'You are analyzing cybersecurity incident reports in a professional security operations context.'",
+          "Pre-process input data to redact or sanitize content that may trigger filters before sending to the LLM",
+          "Consider using the direct OpenAI API instead of Azure OpenAI if content filters are too restrictive for your use case"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.78
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ModelDeprecationWarning",
+        "error_code": "model_deprecated",
+        "tool_name": "openai.ChatCompletion",
+        "operation": "llm_call",
+        "severity": "degraded",
+        "details": "The model 'gpt-4-0613' has been deprecated as of 2025-06-06. Please migrate to 'gpt-4o' or a newer model. This model will stop working after 2025-09-06."
+      },
+      "environment": {
+        "framework": "crewai",
+        "framework_version": "0.80.1",
+        "llm": "gpt-4-0613",
+        "runtime": "python3.11"
+      },
+      "goal_state": "Migrate production CrewAI pipeline from deprecated model"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Systematically migrate to the recommended replacement model with regression testing",
+        "solution_steps": [
+          "Identify the recommended replacement model from OpenAI's deprecation guide: gpt-4-0613 should be replaced with gpt-4o",
+          "Update the model configuration in CrewAI: set llm=ChatOpenAI(model='gpt-4o') on all Agent definitions",
+          "Run your existing test suite and evaluation benchmarks against the new model to detect any behavioral regressions",
+          "Pay special attention to output format changes: gpt-4o may format structured outputs differently than gpt-4-0613",
+          "Update any model-specific prompt engineering (e.g., token limits, temperature settings) to match the new model's characteristics",
+          "Deploy the migration incrementally: route 10% of traffic to the new model initially and monitor error rates"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.89
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "SafetyBlockError",
+        "error_code": "SAFETY",
+        "tool_name": "google.GenerativeAI",
+        "operation": "llm_call",
+        "severity": "blocking",
+        "details": "Response was blocked by Gemini safety filters. Category: HARM_CATEGORY_DANGEROUS_CONTENT. Threshold: BLOCK_MEDIUM_AND_ABOVE. Probability: MEDIUM."
+      },
+      "environment": {
+        "framework": "langchain",
+        "framework_version": "0.3.12",
+        "llm": "gemini-1.5-pro",
+        "runtime": "python3.12"
+      },
+      "goal_state": "LangChain agent generating penetration testing commands for security audit"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Adjust Gemini safety settings for the specific professional use case",
+        "solution_steps": [
+          "Configure safety settings on the model to lower the threshold for the relevant category: safety_settings={HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_ONLY_HIGH}",
+          "When using LangChain, pass safety settings through model_kwargs: ChatGoogleGenerativeAI(model='gemini-1.5-pro', safety_settings={...})",
+          "Frame the request in a professional context: add system instructions that establish the authorized security testing scenario",
+          "If safety filters remain too restrictive, consider switching to a model with configurable content policies for enterprise security use cases",
+          "Implement a prompt rewriting layer that uses technical terminology and avoids trigger phrases while preserving semantic meaning"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.74
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ModelOverloadedError",
+        "error_code": "overloaded_error",
+        "tool_name": "anthropic.Messages",
+        "operation": "llm_call",
+        "severity": "degraded",
+        "details": "Overloaded: Anthropic's API is temporarily overloaded. Please retry your request after a brief wait."
+      },
+      "environment": {
+        "framework": "openai-agents",
+        "framework_version": "1.0.3",
+        "llm": "claude-3.5-sonnet",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Production agent handling concurrent user requests via Anthropic API"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Implement retry with backoff and add a model failover strategy",
+        "solution_steps": [
+          "Add exponential backoff retry specifically for overloaded_error: start at 5 seconds, max 60 seconds, with 3-5 retries",
+          "Implement a model failover: if claude-3.5-sonnet is overloaded, automatically switch to claude-3-haiku or gpt-4o-mini as a fallback",
+          "Monitor Anthropic's status page at status.anthropic.com and implement a circuit breaker that activates during known outages",
+          "Add request queuing with a max concurrency limit to reduce the chance of contributing to overload conditions",
+          "Consider using Anthropic's batch API for non-time-sensitive requests to reduce pressure on the real-time API"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.85
+      }
+    ]
+  }
+]

@@ -129,16 +129,11 @@ async def attempt_open_problems() -> None:
     # In a future implementation this will call the LLM synthesis pipeline.
     logger.info("Synthesis attempted for problem %s (stub — no LLM call)", problem_id)
 
-    # Record the attempt in agent_jobs
+    # Record the attempt in agent_jobs (plain INSERT — a problem can have multiple job entries)
     await postgres.execute(
         """
         INSERT INTO grexis.agent_jobs (problem_id, status, attempts_today, created_at)
         VALUES ($1, 'attempted', 1, NOW())
-        ON CONFLICT (problem_id)
-        DO UPDATE SET
-            attempts_today = grexis.agent_jobs.attempts_today + 1,
-            status = 'attempted',
-            updated_at = NOW()
         """,
         problem_id,
     )

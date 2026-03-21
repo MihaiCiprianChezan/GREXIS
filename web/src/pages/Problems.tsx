@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, Fragment } from "react";
 import { Link } from "react-router-dom";
+import { AlertTriangle } from "lucide-react";
 import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/StatusBadge";
 import { SeverityBadge } from "@/components/SeverityBadge";
@@ -84,14 +85,14 @@ export function ProblemsPage() {
 
   return (
     <div>
-      <h1 style={{ margin: "0 0 16px" }}>Problems</h1>
+      <h1 className="text-xl font-semibold tracking-tight mb-4">Problems</h1>
 
       {/* Filter bar */}
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "16px" }}>
+      <div className="flex gap-2 flex-wrap mb-4">
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          style={inputStyle}
+          className="bg-bg-base text-text-primary border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
         >
           <option value="">All statuses</option>
           {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -99,7 +100,7 @@ export function ProblemsPage() {
         <select
           value={severityFilter}
           onChange={(e) => { setSeverityFilter(e.target.value); setPage(1); }}
-          style={inputStyle}
+          className="bg-bg-base text-text-primary border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
         >
           <option value="">All severities</option>
           {SEVERITIES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -109,62 +110,66 @@ export function ProblemsPage() {
           placeholder="Framework..."
           value={frameworkFilter}
           onChange={(e) => { setFrameworkFilter(e.target.value); setPage(1); }}
-          style={{ ...inputStyle, width: "140px" }}
+          className="bg-bg-base text-text-primary border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent w-36"
         />
       </div>
 
       {error && (
-        <p style={{ color: "#d62828", marginBottom: "12px" }}>
-          {error} <button onClick={fetchProblems} style={retryStyle}>Retry</button>
-        </p>
+        <div className="flex items-center gap-2 text-danger text-sm mb-3">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+          <button onClick={fetchProblems} className="bg-transparent text-text-secondary border border-border hover:bg-bg-elevated rounded-md px-4 py-2 text-sm cursor-pointer transition-colors">
+            Retry
+          </button>
+        </div>
       )}
 
-      <div style={{ backgroundColor: "#16213e", border: "1px solid #0f3460", borderRadius: "8px", overflow: "auto", opacity: loading ? 0.6 : 1 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+      <div className={`bg-bg-surface border border-border rounded-lg overflow-auto transition-opacity ${loading ? "opacity-60" : "opacity-100"}`}>
+        <table className="w-full border-collapse text-sm">
           <thead>
-            <tr style={{ backgroundColor: "#0f3460" }}>
-              <th style={thStyle}>Error Type</th>
-              <th style={thStyle}>Framework</th>
-              <th style={thStyle}>Severity</th>
-              <th style={thStyle}>Duplicates</th>
-              <th style={thStyle}>Status</th>
-              <th style={thStyle}>Last Attempted</th>
-              <th style={thStyle}>Age</th>
-              <th style={thStyle}>Actions</th>
+            <tr className="bg-bg-elevated">
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Error Type</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Framework</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Severity</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Duplicates</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Status</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Last Attempted</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Age</th>
+              <th className="text-[11px] font-semibold text-text-muted uppercase tracking-wide px-4 py-2.5 text-left whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody>
             {problems.length === 0 && !loading ? (
               <tr>
-                <td colSpan={8} style={{ padding: "24px", textAlign: "center", color: "#888" }}>
+                <td colSpan={8} className="px-4 py-6 text-center text-text-muted">
                   No problems found
                 </td>
               </tr>
             ) : (
               problems.map((prob) => (
                 <Fragment key={prob.id}>
-                  <tr style={{ borderBottom: "1px solid #0f3460" }}>
-                    <td style={tdStyle}>
-                      <Link to={`/problems/${prob.id}`} style={{ color: "#a8dadc", textDecoration: "none" }}>
+                  <tr className="border-t border-border hover:bg-bg-elevated/50">
+                    <td className="px-4 py-2.5 text-text-secondary">
+                      <Link to={`/problems/${prob.id}`} className="text-accent hover:underline">
                         {prob.error_type}
                       </Link>
                     </td>
-                    <td style={tdStyle}>
+                    <td className="px-4 py-2.5 text-text-secondary">
                       {prob.framework}
-                      <span style={{ color: "#888", fontSize: "0.75rem" }}> {prob.framework_version}</span>
+                      <span className="text-text-muted text-xs"> {prob.framework_version}</span>
                     </td>
-                    <td style={tdStyle}><SeverityBadge severity={prob.severity} /></td>
-                    <td style={{ ...tdStyle, fontFamily: "monospace" }}>{prob.duplicate_count}</td>
-                    <td style={tdStyle}><StatusBadge status={prob.status} /></td>
-                    <td style={{ ...tdStyle, fontSize: "0.8rem", color: "#888" }}>
+                    <td className="px-4 py-2.5 text-text-secondary"><SeverityBadge severity={prob.severity} /></td>
+                    <td className="px-4 py-2.5 text-text-secondary font-mono">{prob.duplicate_count}</td>
+                    <td className="px-4 py-2.5 text-text-secondary"><StatusBadge status={prob.status} /></td>
+                    <td className="px-4 py-2.5 text-text-muted text-xs">
                       {prob.last_attempted_at ? new Date(prob.last_attempted_at).toLocaleDateString() : "—"}
                     </td>
-                    <td style={{ ...tdStyle, fontSize: "0.8rem", color: "#888" }}>{age(prob.created_at)}</td>
-                    <td style={tdStyle}>
+                    <td className="px-4 py-2.5 text-text-muted text-xs">{age(prob.created_at)}</td>
+                    <td className="px-4 py-2.5 text-text-secondary">
                       {prob.severity === "blocking" && prob.status === "open" && (
                         <button
                           onClick={() => setResolveId(resolveId === prob.id ? null : prob.id)}
-                          style={{ padding: "4px 10px", backgroundColor: "#2d6a4f", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.75rem" }}
+                          className="px-2.5 py-1 bg-success-muted text-success border-none rounded cursor-pointer text-xs font-medium hover:opacity-80 transition-opacity"
                         >
                           Quick resolve
                         </button>
@@ -173,36 +178,36 @@ export function ProblemsPage() {
                   </tr>
                   {resolveId === prob.id && (
                     <tr key={`resolve-${prob.id}`}>
-                      <td colSpan={8} style={{ padding: "16px", backgroundColor: "#1a1a2e" }}>
-                        <div style={{ maxWidth: "600px" }}>
-                          <h4 style={{ margin: "0 0 8px", color: "#e0e0e0" }}>Quick Resolve</h4>
-                          <label style={labelStyle}>Summary</label>
+                      <td colSpan={8} className="px-4 py-4 bg-bg-base border-t border-border">
+                        <div className="max-w-xl">
+                          <h4 className="text-sm font-semibold text-text-primary mb-3">Quick Resolve</h4>
+                          <label className="block text-text-muted text-xs mb-1">Summary</label>
                           <input
                             type="text"
                             value={resolveSummary}
                             onChange={(e) => setResolveSummary(e.target.value)}
-                            style={{ ...inputStyle, width: "100%", marginBottom: "8px" }}
+                            className="bg-bg-base text-text-primary border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent w-full mb-2"
                             placeholder="Brief solution summary..."
                           />
-                          <label style={labelStyle}>Steps (one per line)</label>
+                          <label className="block text-text-muted text-xs mb-1">Steps (one per line)</label>
                           <textarea
                             value={resolveSteps}
                             onChange={(e) => setResolveSteps(e.target.value)}
                             rows={4}
-                            style={{ ...inputStyle, width: "100%", boxSizing: "border-box", resize: "vertical" }}
-                            placeholder="Step 1&#10;Step 2&#10;Step 3"
+                            className="bg-bg-base text-text-primary border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent w-full box-border resize-y"
+                            placeholder={"Step 1\nStep 2\nStep 3"}
                           />
-                          <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                          <div className="flex gap-2 mt-2">
                             <button
                               onClick={() => handleQuickResolve(prob.id)}
                               disabled={resolveSubmitting || !resolveSteps.trim() || !resolveSummary.trim()}
-                              style={{ padding: "6px 16px", backgroundColor: "#2d6a4f", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}
+                              className="px-4 py-2 bg-accent text-white rounded-md text-sm font-medium border-none cursor-pointer hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {resolveSubmitting ? "Submitting..." : "Submit Solution"}
                             </button>
                             <button
                               onClick={() => { setResolveId(null); setResolveSteps(""); setResolveSummary(""); }}
-                              style={{ padding: "6px 16px", backgroundColor: "transparent", color: "#ccc", border: "1px solid #555", borderRadius: "4px", cursor: "pointer" }}
+                              className="bg-transparent text-text-secondary border border-border hover:bg-bg-elevated rounded-md px-4 py-2 text-sm cursor-pointer transition-colors"
                             >
                               Cancel
                             </button>
@@ -219,42 +224,24 @@ export function ProblemsPage() {
       </div>
 
       {totalPages > 1 && (
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "12px", justifyContent: "center" }}>
-          <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} style={pageBtnStyle}>Prev</button>
-          <span style={{ color: "#888", fontSize: "0.85rem" }}>Page {page} of {totalPages} ({total} total)</span>
-          <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={pageBtnStyle}>Next</button>
+        <div className="flex items-center gap-2 mt-3 justify-center">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="bg-transparent text-text-secondary border border-border hover:bg-bg-elevated rounded-md px-4 py-2 text-sm cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Prev
+          </button>
+          <span className="text-text-muted text-sm">Page {page} of {totalPages} ({total} total)</span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="bg-transparent text-text-secondary border border-border hover:bg-bg-elevated rounded-md px-4 py-2 text-sm cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  padding: "6px 10px",
-  backgroundColor: "#1a1a2e",
-  color: "#e0e0e0",
-  border: "1px solid #0f3460",
-  borderRadius: "4px",
-  fontSize: "0.85rem",
-};
-
-const labelStyle: React.CSSProperties = {
-  display: "block",
-  color: "#888",
-  fontSize: "0.8rem",
-  marginBottom: "4px",
-};
-
-const thStyle: React.CSSProperties = {
-  textAlign: "left",
-  padding: "8px 12px",
-  fontWeight: 600,
-  color: "#a0a0b8",
-  fontSize: "0.75rem",
-  textTransform: "uppercase",
-  whiteSpace: "nowrap",
-};
-
-const tdStyle: React.CSSProperties = { padding: "8px 12px", color: "#ccc" };
-const pageBtnStyle: React.CSSProperties = { padding: "4px 12px", backgroundColor: "#0f3460", color: "#e0e0e0", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.85rem" };
-const retryStyle: React.CSSProperties = { padding: "4px 8px", backgroundColor: "#0f3460", color: "#e0e0e0", border: "none", borderRadius: "4px", cursor: "pointer", marginLeft: "8px" };

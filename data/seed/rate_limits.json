@@ -1,0 +1,194 @@
+[
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "RateLimitError",
+        "error_code": "429",
+        "tool_name": "openai.ChatCompletion",
+        "operation": "llm_call",
+        "severity": "blocking",
+        "details": "Rate limit exceeded for gpt-4o: Limit 10000 tokens per min. Current usage: 9850 tokens. Please try again in 1.2s."
+      },
+      "environment": {
+        "framework": "langchain",
+        "framework_version": "0.3.12",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Complete multi-step ReAct agent loop with tool calls"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Add exponential backoff retry logic with jitter to LLM calls",
+        "solution_steps": [
+          "Install tenacity: pip install tenacity",
+          "Wrap the LLM call with @retry(wait=wait_exponential(multiplier=1, min=2, max=60), stop=stop_after_attempt(5), retry=retry_if_exception_type(RateLimitError))",
+          "Add jitter using wait=wait_exponential(multiplier=1, min=2, max=60) + wait_random(0, 2)",
+          "Configure LangChain's max_retries parameter on the ChatOpenAI instance: ChatOpenAI(model='gpt-4o', max_retries=5)",
+          "Monitor retry count in logs to detect persistent rate limiting"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.92
+      },
+      {
+        "solution_summary": "Reduce token throughput by batching requests and implementing a token budget",
+        "solution_steps": [
+          "Track cumulative token usage per minute using a sliding window counter",
+          "Implement a pre-call check: if projected usage exceeds 80% of limit, sleep until the window resets",
+          "Use LangChain's callbacks to track token counts: from langchain.callbacks import get_openai_callback",
+          "Set max_tokens on each request to prevent unexpectedly large responses consuming the budget"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.85
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "QuotaExceededError",
+        "error_code": "quota_exceeded",
+        "tool_name": "anthropic.Messages",
+        "operation": "llm_call",
+        "severity": "blocking",
+        "details": "Your organization has exceeded its monthly spending limit. Current usage: $520.00 / $500.00 limit."
+      },
+      "environment": {
+        "framework": "crewai",
+        "framework_version": "0.80.1",
+        "llm": "claude-3.5-sonnet",
+        "runtime": "python3.11"
+      },
+      "goal_state": "Run CrewAI multi-agent research pipeline to completion"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Increase billing quota or switch to a fallback model when primary quota is exhausted",
+        "solution_steps": [
+          "Log into the Anthropic console at console.anthropic.com and increase the monthly spend limit under Organization Settings > Billing",
+          "Alternatively, implement a model fallback strategy: configure CrewAI agents with a fallback_llm parameter pointing to a cheaper model",
+          "Add a cost estimation step before long-running pipelines using tiktoken to estimate total token usage",
+          "Set per-agent token budgets in CrewAI using max_tokens_per_agent configuration"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.88
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "TokenLimitError",
+        "error_code": "context_length_exceeded",
+        "tool_name": "google.GenerativeAI",
+        "operation": "llm_call",
+        "severity": "blocking",
+        "details": "This model's maximum context length is 1048576 tokens. However, your messages resulted in 1102340 tokens. Please reduce the length of the messages."
+      },
+      "environment": {
+        "framework": "autogen",
+        "framework_version": "0.4.7",
+        "llm": "gemini-1.5-pro",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Process large document corpus through multi-agent conversation"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Implement conversation summarization and sliding window to manage token usage",
+        "solution_steps": [
+          "Enable AutoGen's built-in conversation summarization by setting summary_method='reflection_with_llm' on the GroupChat",
+          "Set max_round and max_consecutive_auto_reply to limit unbounded conversation growth",
+          "Implement a custom message transform that summarizes older messages when total tokens exceed 80% of context window",
+          "Use AutoGen's clear_history method periodically to reset conversation state while preserving key facts in a summary message"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.80
+      },
+      {
+        "solution_summary": "Chunk the document corpus and process in parallel with map-reduce pattern",
+        "solution_steps": [
+          "Split the document corpus into chunks of 500K tokens or fewer using a recursive text splitter",
+          "Create a map phase where each chunk is processed independently by a separate AutoGen agent group",
+          "Implement a reduce phase that aggregates the partial results from each chunk",
+          "Use AutoGen's async capabilities to run chunk processing in parallel for faster execution"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.75
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "RateLimitError",
+        "error_code": "429",
+        "tool_name": "openai.ChatCompletion",
+        "operation": "parallel_tool_calls",
+        "severity": "degraded",
+        "details": "Rate limit reached for gpt-4o in organization org-xxx on requests per min (RPM): Limit 500, Used 498, Requested 5."
+      },
+      "environment": {
+        "framework": "langchain",
+        "framework_version": "0.3.8",
+        "llm": "gpt-4o",
+        "runtime": "python3.11"
+      },
+      "goal_state": "Execute parallel tool calls across multiple LangChain agents"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Implement request-level rate limiting with a shared semaphore across all agents",
+        "solution_steps": [
+          "Create a shared asyncio.Semaphore with a limit below the RPM quota (e.g., asyncio.Semaphore(400) for a 500 RPM limit)",
+          "Wrap all LLM calls with the semaphore: async with semaphore: await llm.ainvoke(messages)",
+          "Add a global request counter that resets every 60 seconds using asyncio.create_task for the reset timer",
+          "If using LangGraph, configure the rate_limiter parameter on the ChatOpenAI model instance",
+          "Consider staggering agent start times by 2-5 seconds to avoid burst patterns"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.90
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "RateLimitError",
+        "error_code": "resource_exhausted",
+        "tool_name": "google.GenerativeAI",
+        "operation": "embedding_call",
+        "severity": "degraded",
+        "details": "Resource exhausted: Quota exceeded for embedding requests per minute on models/text-embedding-004. Limit: 1500 QPM."
+      },
+      "environment": {
+        "framework": "crewai",
+        "framework_version": "0.80.4",
+        "llm": "gemini-1.5-pro",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Build and query RAG knowledge base for CrewAI research agents"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Batch embedding requests and cache results to minimize API calls",
+        "solution_steps": [
+          "Batch documents into groups of 100 before calling the embedding API instead of sending one at a time",
+          "Implement a local embedding cache using an SQLite database keyed by content hash (SHA-256)",
+          "Before calling the embedding API, check the cache for existing embeddings of identical content",
+          "Add a rate limiter using a token bucket algorithm set to 80% of the QPM limit (1200 requests/min)",
+          "For initial bulk indexing, use the batch embedding endpoint with built-in rate management"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.87
+      }
+    ]
+  }
+]

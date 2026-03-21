@@ -1,0 +1,138 @@
+[
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "DNSResolutionError",
+        "error_code": "ENOTFOUND",
+        "tool_name": "httpx.AsyncClient",
+        "operation": "llm_call",
+        "severity": "blocking",
+        "details": "Could not resolve hostname 'api.openai.com': Name or service not known. DNS resolution failed."
+      },
+      "environment": {
+        "framework": "langchain",
+        "framework_version": "0.3.11",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "LangChain agent connecting to OpenAI API in containerized environment"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Fix DNS configuration in the container or host environment",
+        "solution_steps": [
+          "Verify DNS resolution from the host: nslookup api.openai.com or dig api.openai.com",
+          "In Docker, ensure the container uses a valid DNS server: add dns: ['8.8.8.8', '8.8.4.4'] to docker-compose.yml",
+          "Check /etc/resolv.conf inside the container for valid nameserver entries",
+          "If using Kubernetes, verify CoreDNS is running: kubectl get pods -n kube-system -l k8s-app=kube-dns",
+          "As a temporary workaround, add the IP directly to /etc/hosts: 104.18.6.192 api.openai.com (verify current IP first)"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.90
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "SSLCertificateError",
+        "error_code": "CERTIFICATE_VERIFY_FAILED",
+        "tool_name": "httpx.AsyncClient",
+        "operation": "llm_call",
+        "severity": "blocking",
+        "details": "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1007). Connection to api.anthropic.com:443 failed."
+      },
+      "environment": {
+        "framework": "crewai",
+        "framework_version": "0.80.3",
+        "llm": "claude-3.5-sonnet",
+        "runtime": "python3.11"
+      },
+      "goal_state": "CrewAI agents communicating with Anthropic API behind corporate proxy"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Install corporate CA certificates and configure Python SSL context",
+        "solution_steps": [
+          "Install the corporate CA certificate bundle: pip install pip-system-certs or pip install certifi",
+          "Set the SSL_CERT_FILE environment variable to point to the corporate CA bundle: export SSL_CERT_FILE=/etc/ssl/certs/corporate-ca-bundle.pem",
+          "Alternatively, set REQUESTS_CA_BUNDLE for the requests library: export REQUESTS_CA_BUNDLE=/etc/ssl/certs/corporate-ca-bundle.pem",
+          "Run the Python certificate installer on macOS: /Applications/Python\\ 3.11/Install\\ Certificates.command",
+          "As a last resort (NOT recommended for production), disable SSL verification: httpx.AsyncClient(verify=False) and suppress warnings"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.92
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ConnectionRefusedError",
+        "error_code": "ECONNREFUSED",
+        "tool_name": "httpx.AsyncClient",
+        "operation": "tool_execution",
+        "severity": "blocking",
+        "details": "Connection refused: [Errno 111] Connect call failed ('127.0.0.1', 6333). Could not connect to Qdrant vector database."
+      },
+      "environment": {
+        "framework": "autogen",
+        "framework_version": "0.4.7",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "AutoGen RAG agent querying Qdrant vector store for knowledge retrieval"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Start the Qdrant service and verify network connectivity",
+        "solution_steps": [
+          "Check if Qdrant is running: docker ps | grep qdrant or systemctl status qdrant",
+          "Start Qdrant if not running: docker run -d -p 6333:6333 qdrant/qdrant:latest",
+          "Verify the service is accessible: curl http://localhost:6333/healthz should return a 200 response",
+          "If running in Docker Compose, ensure the agent container and Qdrant are on the same network and use the service name (qdrant:6333) instead of localhost",
+          "Check for port conflicts: lsof -i :6333 to see if another service is using the port"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.93
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "ProxyError",
+        "error_code": "proxy_connection_failed",
+        "tool_name": "httpx.AsyncClient",
+        "operation": "llm_call",
+        "severity": "blocking",
+        "details": "ProxyError: Cannot connect to proxy http://corporate-proxy.internal:8080. Connection to proxy timed out after 10.0 seconds."
+      },
+      "environment": {
+        "framework": "openai-agents",
+        "framework_version": "1.0.4",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "OpenAI Agents SDK running in corporate network with mandatory proxy"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Configure proxy settings correctly for the HTTP client and verify proxy accessibility",
+        "solution_steps": [
+          "Set proxy environment variables: export HTTP_PROXY=http://corporate-proxy.internal:8080 and export HTTPS_PROXY=http://corporate-proxy.internal:8080",
+          "Verify the proxy is reachable from the host: curl -x http://corporate-proxy.internal:8080 https://api.openai.com/v1/models",
+          "If the proxy requires authentication, include credentials: export HTTPS_PROXY=http://user:password@corporate-proxy.internal:8080",
+          "Configure httpx client directly: httpx.AsyncClient(proxy='http://corporate-proxy.internal:8080')",
+          "Add NO_PROXY for any internal services that should bypass the proxy: export NO_PROXY=localhost,127.0.0.1,.internal"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.87
+      }
+    ]
+  }
+]

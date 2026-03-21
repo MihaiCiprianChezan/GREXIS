@@ -52,37 +52,17 @@ export function ConfirmModal({
 
   return (
     <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        backgroundColor: "rgba(0,0,0,0.6)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onCancel();
-      }}
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000]"
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
       role="dialog"
       aria-modal="true"
       aria-label={title}
     >
-      <div
-        style={{
-          backgroundColor: "#16213e",
-          border: "1px solid #0f3460",
-          borderRadius: "8px",
-          padding: "24px",
-          maxWidth: "480px",
-          width: "100%",
-        }}
-      >
-        <h3 style={{ margin: "0 0 8px", color: "#e0e0e0" }}>{title}</h3>
-        <p style={{ color: "#aaa", fontSize: "0.9rem", margin: "0 0 16px" }}>
-          {description}
-        </p>
-        <label style={{ display: "block", color: "#ccc", fontSize: "0.85rem", marginBottom: "6px" }}>
+      <div className="bg-bg-surface border border-border rounded-xl p-6 max-w-[480px] w-full shadow-lg animate-in">
+        <h3 className="text-base font-semibold text-text-primary m-0 mb-2">{title}</h3>
+        <p className="text-text-secondary text-sm m-0 mb-4">{description}</p>
+
+        <label className="block text-text-secondary text-xs mb-1.5">
           Reason (minimum 10 characters):
         </label>
         <textarea
@@ -90,51 +70,28 @@ export function ConfirmModal({
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={3}
-          style={{
-            width: "100%",
-            boxSizing: "border-box",
-            backgroundColor: "#1a1a2e",
-            color: "#e0e0e0",
-            border: "1px solid #0f3460",
-            borderRadius: "4px",
-            padding: "8px",
-            fontFamily: "inherit",
-            fontSize: "0.9rem",
-            resize: "vertical",
-          }}
+          className="w-full bg-bg-base text-text-primary border border-border rounded-md p-2.5 font-sans text-sm resize-y focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent placeholder:text-text-muted"
           placeholder="Enter reason for this action..."
         />
         {reason.length > 0 && reason.trim().length < 10 && (
-          <p style={{ color: "#e09f3e", fontSize: "0.8rem", margin: "4px 0 0" }}>
-            {10 - reason.trim().length} more characters needed
-          </p>
+          <p className="text-warning text-xs mt-1">{10 - reason.trim().length} more characters needed</p>
         )}
-        <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", marginTop: "16px" }}>
+
+        <div className="flex gap-2 justify-end mt-4">
           <button
             onClick={onCancel}
-            style={{
-              padding: "8px 16px",
-              backgroundColor: "transparent",
-              color: "#ccc",
-              border: "1px solid #555",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
+            className="px-4 py-2 bg-transparent text-text-secondary border border-border rounded-md cursor-pointer text-sm hover:bg-bg-elevated hover:text-text-primary transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={!canConfirm}
-            style={{
-              padding: "8px 16px",
-              backgroundColor: canConfirm ? "#d62828" : "#555",
-              color: canConfirm ? "#fff" : "#888",
-              border: "none",
-              borderRadius: "4px",
-              cursor: canConfirm ? "pointer" : "not-allowed",
-              fontWeight: 600,
-            }}
+            className={`px-4 py-2 rounded-md text-sm font-semibold border-none transition-colors ${
+              canConfirm
+                ? "bg-danger text-white cursor-pointer hover:brightness-110"
+                : "bg-bg-elevated text-text-muted cursor-not-allowed"
+            }`}
           >
             {submitting ? "..." : confirmLabel}
           </button>

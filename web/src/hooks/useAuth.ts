@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { api } from "@/lib/api";
 
 export function useAuth() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);

@@ -97,10 +97,14 @@ TOOL_HANDLERS = {
 
 @mcp_server.call_tool()
 async def call_tool(name: str, arguments: dict):
+    from grexis.services.tokens import BannedTokenError
     handler = TOOL_HANDLERS.get(name)
     if not handler:
         raise ValueError(f"Unknown tool: {name}")
-    result = await handler(deps=deps, **arguments)
+    try:
+        result = await handler(deps=deps, **arguments)
+    except BannedTokenError as e:
+        result = {"error": "TOKEN_BANNED", "message": str(e)}
     return [TextContent(type="text", text=json.dumps(result))]
 
 

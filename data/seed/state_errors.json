@@ -1,0 +1,138 @@
+[
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "InfiniteLoopError",
+        "error_code": "max_iterations_exceeded",
+        "tool_name": "langchain.agents.AgentExecutor",
+        "operation": "agent_loop",
+        "severity": "blocking",
+        "details": "Agent exceeded maximum iterations (25). The agent is repeatedly calling the same tool 'search_web' with identical arguments without making progress toward the goal."
+      },
+      "environment": {
+        "framework": "langchain",
+        "framework_version": "0.3.10",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "LangChain ReAct agent completing research task with web search"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Add loop detection and force the agent to synthesize after repeated tool calls",
+        "solution_steps": [
+          "Set max_iterations on AgentExecutor: AgentExecutor(agent=agent, tools=tools, max_iterations=15, early_stopping_method='generate')",
+          "Implement a custom callback that detects repeated identical tool calls and injects a message forcing the agent to summarize what it has learned so far",
+          "Add a 'no-repeat' instruction to the system prompt: 'If a tool returns the same result as a previous call, do not call it again. Instead, synthesize your findings and provide a final answer.'",
+          "Review the tool's output format to ensure it returns enough information for the agent to determine the next action",
+          "Use LangGraph instead of AgentExecutor for more granular control over the agent loop with explicit state transitions"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.88
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "DeadlockError",
+        "error_code": "agent_deadlock",
+        "tool_name": "autogen.GroupChat",
+        "operation": "agent_conversation",
+        "severity": "blocking",
+        "details": "Deadlock detected in GroupChat: agents 'Researcher' and 'Critic' are repeatedly deferring to each other without producing actionable output. 40 consecutive messages with no tool calls or final answer."
+      },
+      "environment": {
+        "framework": "autogen",
+        "framework_version": "0.4.6",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "Multi-agent AutoGen group chat producing a research report"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Add a moderator agent and configure conversation flow rules to prevent circular deferral",
+        "solution_steps": [
+          "Set max_round on GroupChat to limit conversation length: GroupChat(agents=agents, messages=[], max_round=20)",
+          "Add a moderator agent with system prompt: 'You are the moderator. If agents are going back and forth without progress, intervene and direct one agent to produce a concrete output.'",
+          "Configure speaker_selection_method to 'round_robin' or use a custom function that prevents the same two agents from speaking consecutively more than twice",
+          "Add a termination condition using is_termination_msg that detects when a final deliverable has been produced",
+          "Give each agent a clear role boundary in their system prompt: explicitly state what they should and should not do"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.83
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "StateCorruptionError",
+        "error_code": "invalid_state_transition",
+        "tool_name": "langgraph.StateGraph",
+        "operation": "state_update",
+        "severity": "blocking",
+        "details": "Invalid state transition: node 'analyze' attempted to write to key 'documents' which was set to an incompatible type. Expected list[Document], got str. State has become inconsistent."
+      },
+      "environment": {
+        "framework": "langchain",
+        "framework_version": "0.3.12",
+        "llm": "gpt-4o",
+        "runtime": "python3.12"
+      },
+      "goal_state": "LangGraph multi-step workflow with typed state management"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Add strict type annotations and validation to the LangGraph state schema",
+        "solution_steps": [
+          "Define the state as a TypedDict with explicit type annotations: class AgentState(TypedDict): documents: Annotated[list[Document], operator.add]",
+          "Add runtime type validation in each node function before returning state updates",
+          "Use Annotated types with reducer functions to specify how state fields should be merged: Annotated[list, operator.add] for list accumulation",
+          "Add a state validation node after critical transitions that checks all fields match their expected types",
+          "Implement unit tests for each node that verify the output state schema matches the expected TypedDict structure"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.86
+      }
+    ]
+  },
+  {
+    "problem": {
+      "failure_signature": {
+        "error_type": "StuckAgentError",
+        "error_code": "no_progress",
+        "tool_name": "crewai.Crew",
+        "operation": "crew_execution",
+        "severity": "blocking",
+        "details": "Agent 'Data Collector' has been working on the same task for 15 minutes without producing output. The agent appears to be stuck in a planning loop without executing any tools."
+      },
+      "environment": {
+        "framework": "crewai",
+        "framework_version": "0.80.4",
+        "llm": "claude-3.5-sonnet",
+        "runtime": "python3.11"
+      },
+      "goal_state": "CrewAI data collection pipeline with multiple specialized agents"
+    },
+    "solutions": [
+      {
+        "solution_summary": "Add task timeouts and improve agent instructions to be more action-oriented",
+        "solution_steps": [
+          "Set a timeout on each CrewAI Task: Task(description='...', timeout=300) to limit execution time to 5 minutes",
+          "Rewrite the agent's role and goal to be action-oriented: instead of 'analyze data', use 'collect the top 10 data points from the search tool and return them as a numbered list'",
+          "Add explicit tool usage instructions: 'You MUST use the search_tool at least once before providing your answer. Do not plan extensively; act immediately.'",
+          "Enable verbose mode to monitor agent behavior in real time: Crew(agents=agents, tasks=tasks, verbose=True)",
+          "Set max_iter on the Agent: Agent(role='Data Collector', max_iter=10) to prevent unbounded iteration"
+        ],
+        "source": "human_curated",
+        "confidence": "empirical",
+        "confidence_score": 0.81
+      }
+    ]
+  }
+]

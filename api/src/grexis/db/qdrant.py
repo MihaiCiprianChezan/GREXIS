@@ -86,6 +86,15 @@ class QdrantClient:
             search_params=SearchParams(exact=False, hnsw_ef=128),
         )
 
+    async def find_cluster(self, failure_sig) -> None:
+        """Placeholder for cluster expansion lookup.
+
+        Full implementation would search for similar failure patterns
+        and return a matching cluster. Currently returns None to skip
+        cluster expansion (clusters are managed by the scheduled job).
+        """
+        return None
+
     async def delete_point(self, collection: str, point_id: str) -> None:
         await self.client.delete(
             collection_name=collection,

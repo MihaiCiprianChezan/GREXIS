@@ -1,5 +1,6 @@
 import hashlib
 from grexis.services.tokens import resolve_agent_token, hash_token
+from grexis.services.rate_limit import check_submission_rate
 from grexis.lib.audit import log_to_audit
 
 
@@ -11,6 +12,11 @@ async def handle_register_agent(
     framework: str | None = None,
 ) -> dict:
     token = await resolve_agent_token(deps.postgres, deps.redis, agent_token)
+
+    tier = token.tier if token else "anonymous"
+    if not await check_submission_rate(deps.redis, deps.postgres, tier, token.hash if token else None):
+        return {"error": "RATE_LIMITED", "retry_after_seconds": 3600}
+
     token_hash = hash_token(agent_token)
 
     email_hash = None

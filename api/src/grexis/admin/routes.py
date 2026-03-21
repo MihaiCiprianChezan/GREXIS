@@ -102,7 +102,7 @@ async def get_solution(solution_id: str, admin=Depends(require_admin)):
         "SELECT * FROM grexis.feedback_events WHERE solution_id = $1 ORDER BY created_at DESC", solution_id
     )
     edges = await deps.postgres.fetch(
-        "SELECT * FROM grexis.resolution_edges WHERE from_id = $1 OR to_id = $1", solution_id
+        "SELECT * FROM grexis.resolution_edges WHERE source_node_id = $1 OR target_node_id = $1", solution_id
     )
     return {
         "solution": dict(solution),
@@ -251,8 +251,8 @@ async def get_problem(problem_id: str, admin=Depends(require_admin)):
     # Linked solutions via edges
     solutions = await deps.postgres.fetch("""
         SELECT s.* FROM grexis.solutions s
-        JOIN grexis.resolution_edges e ON e.from_id = s.id::text
-        WHERE e.to_id = $1 AND e.relation_type = 'solution_resolves_problem'
+        JOIN grexis.resolution_edges e ON e.source_node_id = s.id::text
+        WHERE e.target_node_id = $1 AND e.edge_type = 'solution_resolves_problem'
     """, problem_id)
 
     # Agent jobs with synthesis logs
@@ -298,7 +298,7 @@ async def list_tokens(
         f"SELECT COUNT(*) FROM grexis.agent_tokens {where}", *params
     )
     rows = await deps.postgres.fetch(
-        f"SELECT * FROM grexis.agent_tokens {where} ORDER BY created_at DESC LIMIT ${idx} OFFSET ${idx + 1}",
+        f"SELECT * FROM grexis.agent_tokens {where} ORDER BY first_seen_at DESC LIMIT ${idx} OFFSET ${idx + 1}",
         *params, per_page, offset,
     )
     return {"items": [dict(r) for r in rows], "total": count, "page": page, "per_page": per_page}
@@ -323,6 +323,8 @@ async def ban_token(token_hash: str, request: Request, admin=Depends(require_adm
         "UPDATE grexis.agent_tokens SET is_banned = TRUE, ban_reason = $1, banned_at = NOW() WHERE token_hash = $2",
         reason, token_hash,
     )
+    # Invalidate Redis cache so ban takes effect immediately
+    await deps.redis.client.delete(f"rep:{token_hash}")
     await log_to_audit(
         deps.postgres, "human_admin", "admin", "ban_token",
         target_id=token_hash, reason=reason,
@@ -339,6 +341,8 @@ async def unban_token(token_hash: str, request: Request, admin=Depends(require_a
         "UPDATE grexis.agent_tokens SET is_banned = FALSE, ban_reason = NULL, banned_at = NULL WHERE token_hash = $1",
         token_hash,
     )
+    # Invalidate Redis cache so unban takes effect immediately
+    await deps.redis.client.delete(f"rep:{token_hash}")
     await log_to_audit(deps.postgres, "human_admin", "admin", "unban_token", target_id=token_hash, reason=reason)
     return {"ok": True}
 
@@ -349,7 +353,7 @@ async def reset_token(token_hash: str, request: Request, admin=Depends(require_a
     reason = body.get("reason", "")
 
     await deps.postgres.execute(
-        "UPDATE grexis.agent_tokens SET submitted_solutions_count = 0, success_rate = 0 WHERE token_hash = $1",
+        "UPDATE grexis.agent_tokens SET submitted_solutions_count = 0, submitted_solutions_success_rate = 0 WHERE token_hash = $1",
         token_hash,
     )
     await log_to_audit(
@@ -465,8 +469,8 @@ async def dismiss_cluster(cluster_id: str, request: Request, admin=Depends(requi
 
 @router.post("/clusters/trigger")
 async def trigger_clustering(admin=Depends(require_admin)):
-    from grexis.jobs.clustering import run_clustering
-    result = await run_clustering(deps.postgres, deps.qdrant, deps.embed_service)
+    from grexis.scheduler.clustering import run_clustering_job
+    result = await run_clustering_job()
     await log_to_audit(
         deps.postgres, "human_admin", "admin", "trigger_clustering",
     )
@@ -507,6 +511,11 @@ async def update_settings(request: Request, admin=Depends(require_admin)):
             "UPDATE grexis.settings SET value = $1::jsonb, updated_at = NOW() WHERE key = $2",
             json.dumps(value), key,
         )
+
+    # Invalidate rate limits cache if rate_limits were updated
+    if "rate_limits" in body:
+        from grexis.services.rate_limit import invalidate_rate_limits_cache
+        invalidate_rate_limits_cache()
 
     await log_to_audit(
         deps.postgres, "human_admin", "admin", "update_settings",

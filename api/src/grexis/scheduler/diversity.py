@@ -33,10 +33,10 @@ async def recompute_diversity_factors() -> None:
             s.id AS solution_id,
             COUNT(*) FILTER (WHERE fe.outcome = 'success') AS success_count,
             COUNT(DISTINCT (
-                fe.environment_llm,
-                fe.environment_framework,
-                fe.environment_framework_version,
-                fe.environment_runtime
+                fe.llm,
+                fe.framework,
+                fe.framework_version,
+                fe.runtime
             )) FILTER (WHERE fe.outcome = 'success') AS unique_env_count
         FROM grexis.solutions s
         JOIN grexis.feedback_events fe ON fe.solution_id = s.id

@@ -75,8 +75,7 @@ async def aggregate_old_feedback() -> None:
                          / (COALESCE(attempt_count, 0) + $2)
                     ELSE $1
                 END,
-                attempt_count = COALESCE(attempt_count, 0) + $2,
-                updated_at = NOW()
+                attempt_count = COALESCE(attempt_count, 0) + $2
             WHERE id = $3
             """,
             success_rate,

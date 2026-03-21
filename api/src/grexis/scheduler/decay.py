@@ -163,7 +163,7 @@ async def recompute_decay() -> None:
         await postgres.execute(
             """
             UPDATE grexis.solutions
-            SET confidence_score = $1, updated_at = NOW()
+            SET confidence_score = $1
             WHERE id = $2
             """,
             new_score,

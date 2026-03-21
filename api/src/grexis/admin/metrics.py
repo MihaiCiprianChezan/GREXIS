@@ -59,7 +59,7 @@ async def _get_agent_success_rate(db) -> float:
 
 
 async def _get_mttr(redis) -> float:
-    samples = await redis.client.lrange("metric:resolution_times_ms", 0, -1)
+    samples = await redis.client.lrange("metrics:resolution_times_ms", 0, 999)
     if not samples:
         return 0.0
     values = [float(s) for s in samples]
@@ -67,15 +67,15 @@ async def _get_mttr(redis) -> float:
 
 
 async def _get_latency_percentiles(redis) -> dict:
-    samples = await redis.client.lrange("metric:query_latency_ms", 0, -1)
+    samples = await redis.client.lrange("metrics:query_latencies", 0, 999)
     if not samples:
         return {"p50": 0, "p95": 0, "p99": 0}
     values = sorted(float(s) for s in samples)
     n = len(values)
     return {
-        "p50": values[int(n * 0.5)],
-        "p95": values[int(n * 0.95)],
-        "p99": values[int(n * 0.99)],
+        "p50": values[min(int(n * 0.5), n - 1)],
+        "p95": values[min(int(n * 0.95), n - 1)],
+        "p99": values[min(int(n * 0.99), n - 1)],
     }
 
 

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api";
+import { Zap } from "lucide-react";
 
 interface LoginPageProps {
   onLogin: () => void;
@@ -37,36 +38,28 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
-        backgroundColor: "#1a1a2e",
-        color: "#e0e0e0",
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      }}
-    >
+    <div className="flex items-center justify-center min-h-screen bg-bg-base font-sans relative overflow-hidden">
+      {/* Aurora gradient background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-[20%] left-[15%] w-[500px] h-[500px] rounded-full bg-[oklch(0.3_0.12_280/20%)] blur-[120px]" />
+        <div className="absolute bottom-[10%] right-[20%] w-[400px] h-[400px] rounded-full bg-[oklch(0.3_0.1_230/15%)] blur-[100px]" />
+      </div>
+
       <form
         onSubmit={handleSubmit}
-        style={{
-          backgroundColor: "#16213e",
-          border: "1px solid #0f3460",
-          borderRadius: "8px",
-          padding: "32px",
-          width: "360px",
-        }}
+        className="relative bg-bg-surface border border-border rounded-xl p-8 w-[380px] shadow-lg"
       >
-        <h1 style={{ margin: "0 0 4px", fontSize: "1.4rem" }}>GREXIS</h1>
-        <p style={{ margin: "0 0 24px", color: "#888", fontSize: "0.9rem" }}>
-          Admin dashboard
-        </p>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-lg bg-accent-muted flex items-center justify-center">
+            <Zap size={20} className="text-accent" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight m-0">GREXIS</h1>
+            <p className="text-text-muted text-xs m-0">Admin dashboard</p>
+          </div>
+        </div>
 
-        <label
-          htmlFor="secret"
-          style={{ display: "block", marginBottom: "6px", fontSize: "0.85rem", color: "#ccc" }}
-        >
+        <label htmlFor="secret" className="block text-text-secondary text-xs font-medium mb-1.5">
           API Secret
         </label>
         <input
@@ -76,42 +69,29 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           value={secret}
           onChange={(e) => setSecret(e.target.value)}
           autoComplete="current-password"
-          style={{
-            width: "100%",
-            boxSizing: "border-box",
-            padding: "10px 12px",
-            backgroundColor: "#1a1a2e",
-            color: "#e0e0e0",
-            border: "1px solid #0f3460",
-            borderRadius: "4px",
-            fontSize: "1rem",
-          }}
+          className="w-full px-3 py-2.5 bg-bg-base text-text-primary border border-border rounded-md text-sm font-sans focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent placeholder:text-text-muted"
+          placeholder="Enter your API secret..."
         />
 
         {error && (
-          <p style={{ color: "#d62828", fontSize: "0.85rem", margin: "8px 0 0" }} role="alert">
-            {error}
-          </p>
+          <p className="text-danger text-xs mt-2 m-0" role="alert">{error}</p>
         )}
 
         <button
           type="submit"
           disabled={loading || !secret}
-          style={{
-            width: "100%",
-            marginTop: "16px",
-            padding: "10px",
-            backgroundColor: loading || !secret ? "#555" : "#0f3460",
-            color: loading || !secret ? "#888" : "#e0e0e0",
-            border: "none",
-            borderRadius: "4px",
-            fontSize: "1rem",
-            fontWeight: 600,
-            cursor: loading || !secret ? "not-allowed" : "pointer",
-          }}
+          className={`w-full mt-4 py-2.5 rounded-md text-sm font-semibold border-none transition-colors ${
+            loading || !secret
+              ? "bg-bg-elevated text-text-muted cursor-not-allowed"
+              : "bg-accent text-white cursor-pointer hover:bg-accent-hover"
+          }`}
         >
           {loading ? "Signing in..." : "Sign in"}
         </button>
+
+        <p className="text-text-muted text-[11px] text-center mt-4 mb-0">
+          Semantic resolution graph for autonomous agents
+        </p>
       </form>
     </div>
   );
