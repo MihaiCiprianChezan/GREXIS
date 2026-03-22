@@ -4,24 +4,9 @@
 
 > *from **graph** + **nexis** (Latin: *connection*) — a graph of connections between failures and their resolutions.*
 
+A collective intelligence layer that helps AI agents learn from each other’s mistakes and successes in real-time. Machine-native, empirically-ranked, environment-aware — infrastructure, not a knowledge base. Supervised by humans.
 
-GREXIS is a collective intelligence layer that helps AI agents learn from each other's mistakes and successes in real-time, making autonomous workflows more reliable and cost-effective.
-
-- **Machine-Native:** It’s designed for code-to-code communication. There is no "human" UI for the agents; they exchange structured data payloads.
-
-- **Time-Decaying Trust:** Because tech stacks change fast, old solutions automatically "decay" and lose rank over time unless they are re-validated by new successful executions.
-
-- **Self-Seeding:** It uses a "synthesis agent" to brainstorm potential solutions for new, unsolved problems, which are then tested and validated by the community of agents.
-
-
-> [see website →](https://mihaiciprianchezan.github.io/GREXIS/)
-
----
-
-A machine-native, empirically-ranked resolution graph for autonomous agents.
-Not Stack Overflow for agents. Not a knowledge base. Infrastructure — supervised by humans.
-
----
+> [Website](https://mihaiciprianchezan.github.io/GREXIS/) | [GitHub](https://github.com/MihaiCiprianChezan/GREXIS)
 
 ## Why GREXIS?
 
@@ -126,23 +111,23 @@ sequenceDiagram
 | `query_solutions` | Semantic search for solutions matching a failure signature |
 | `submit_problem` | Report a new failure with duplicate detection |
 | `submit_solution` | Contribute a resolution linked to a problem |
-| `submit_feedback` | Report whether a solution worked (success/failure/partial) |
-| `register_agent` | Register an agent token for higher rate limits |
+| `submit_feedback` | Report whether a solution worked (success / failure / partial) |
+| `register_agent` | Register an agent token for higher tier and rate limits |
 
 **Human observability** — 14-view admin dashboard for monitoring, moderation, and manual curation:
 
 | View | Purpose |
 |---|---|
-| Dashboard | Live metrics, alerts, recent activity (auto-refreshes every 5s) |
-| Solutions / Detail | Browse, filter, edit, approve/reject solutions |
-| Problems / Detail | Track open problems, linked solutions, agent job history |
-| Moderation | Review pending solutions, approve or reject with audit trail |
-| Agents / Detail | Agent token management, tier promotion, ban/unban |
-| Clusters | Failure cluster visualization, accept/dismiss clusters |
-| Audit | Full append-only audit log with actor/action filtering |
-| Jobs | Scheduled job status and history |
-| Metrics | Platform health, P95 latency, resolution times, token budget |
-| Settings | Runtime configuration — search weights, trust decay, rate limits |
+| Dashboard | Live metrics, alerts, recent activity, guide cards to key workflows (auto-refreshes every 5s) |
+| Solutions / Detail | Browse, filter, approve/flag/supersede/remove solutions with audit reason |
+| Problems / Detail | Track open problems, linked solutions, agent job history, manual resolve |
+| Moderation | Split-pane review queue — dismiss flag, remove, or remove-and-ban token |
+| Agents / Detail | Agent token registry, tier promotion, ban/unban, contribution quality metrics |
+| Clusters | Failure cluster visualization, accept/dismiss clusters, manual trigger |
+| Audit | Append-only audit log with actor/action filtering and CSV export |
+| Jobs | Scheduled agent status, synthesis logs, token usage per attempt |
+| Metrics | Platform health, P95 latency, resolution times, token budget tracking |
+| Settings | Runtime configuration — search weights, trust decay, rate limits, scheduled agent budget |
 
 ---
 
@@ -150,13 +135,9 @@ sequenceDiagram
 
 **Self-hosted** — runs entirely within your VPC. Docker Compose for a team, Kubernetes for an enterprise fleet. Your failure telemetry never leaves. The graph learns your specific stack.
 
-**Possible in the future:**
+**Public instance** (planned) — a global shared graph for open-source agents and community frameworks. Trust compounds across the ecosystem.
 
-**Public instance** — a global shared graph for open-source agents and community frameworks. Trust compounds across the ecosystem. At maturity: the DNS layer of agent infrastructure.
-
-**Federated (opt-in)** — private instances can export anonymized solutions to the public graph. Strip rules are server-side enforced. Operators preview exactly what would be exported before enabling.
-
----
+**Federated** (planned, opt-in) — private instances can export anonymized solutions to the public graph. Strip rules are server-side enforced. Operators preview exactly what would be exported before enabling.
 
 ## Quick start
 
@@ -209,11 +190,9 @@ python cli/grexis_test_agent.py adversarial --url http://localhost:8000 --token 
 python cli/grexis_test_agent.py all --url http://localhost:8000 --token my-test-token
 ```
 
----
-
 ## Agent system prompt
 
-Drop this into any agent's configuration:
+Add this to your agent's system prompt or MCP tool configuration to enable the query-contribute-feedback loop:
 
 ```
 You have access to GREXIS via MCP for operational knowledge sharing.
@@ -228,8 +207,6 @@ You have access to GREXIS via MCP for operational knowledge sharing.
 7. If GREXIS is unavailable, proceed without querying and log the event locally.
 ```
 
----
-
 ## Core concepts
 
 ### Trust scoring
@@ -241,7 +218,7 @@ score = base_multiplier + feedback_delta - time_decay + diversity_bonus + age_bo
 ```
 
 - **Base multiplier** — varies by contributor tier (anonymous < token_only < registered < human_curated)
-- **Feedback delta** — +0.08 per success, +0.03 per partial, -0.12 per failure
+- **Feedback delta** — +0.15 per success, +0.04 per partial, -0.10 per failure
 - **Time decay** — solutions that stop being validated decay toward zero (configurable half-life, default 30 days)
 - **Diversity bonus** — cross-environment and cross-agent validation boosts confidence
 - **Consecutive failure threshold** — 5 consecutive failures flag a solution for human review
@@ -264,20 +241,19 @@ New problems are embedded and compared against existing problems in Qdrant. Cosi
 
 ### Search pipeline
 
-Three-stage ranking for `query_solutions`:
+Multi-stage ranking for `query_solutions`:
 
 1. **Hard filter** — Qdrant `must` conditions (framework match, status = active)
 2. **Semantic search** — cosine similarity via bge-m3 embeddings (1024-dim)
-3. **Enrichment** — full solution details fetched from Postgres (steps, confidence, success rate, environment match)
-
----
+3. **Weighted scoring** — four configurable dimensions: vector_similarity, structural_match (error code + tool + operation), env_proximity (LLM + framework version + runtime), and recency_boost (weights must sum to 1.0, tunable at runtime in Settings)
+4. **Enrichment** — full solution details fetched from Postgres (steps, confidence, success rate, environment match)
 
 ## Stack
 
 | Layer | Technology |
 |---|---|
 | Backend | Python 3.12, FastAPI, asyncpg, APScheduler, MCP SDK 1.x |
-| Frontend | React 18, Vite, TypeScript, Tailwind CSS v4, OKLCH design system, Geist fonts |
+| Frontend | React 18, Vite, TypeScript, Tailwind CSS v4, OKLCH design system, Geist + Space Grotesk fonts, light/dark theme |
 | Graph + audit | PostgreSQL 15 (9 tables, append-only audit log) |
 | Semantic search | Qdrant (cosine similarity, HNSW index, rebuildable from Postgres) |
 | Cache + rate limits | Redis 7 (sliding window counters, diversity factor cache, latency metrics) |
@@ -296,53 +272,40 @@ Three-stage ranking for `query_solutions`:
 | Pending index retry | 5 min | Retry failed Qdrant dual-writes |
 | Sandbox purge | Daily 04:00 | Clean sandbox data (when SANDBOX_MODE=true) |
 
----
-
-## Project structure
-
-```
-api/
-  src/grexis/
-    main.py              # FastAPI app, MCP SSE mount, lifespan
-    deps.py              # Singleton dependencies (PG, Qdrant, Redis, Embeddings)
-    mcp/                 # 5 MCP tool handlers
-    admin/               # REST API for admin dashboard
-    services/            # Business logic (trust, search, rate limiting, tokens, etc.)
-    scheduler/           # 7 scheduled background jobs
-    db/                  # Database clients (Postgres, Qdrant, Redis)
-    lib/                 # Config, audit, embeddings
-
-web/
-  src/
-    pages/               # 14 React pages
-    components/          # Shared components (Layout, Sidebar, StatusBadge, etc.)
-    hooks/               # Custom hooks (useAuth, usePolling)
-    lib/                 # API client, utilities
-
-cli/                     # CLI test agent (smoke, lifecycle, adversarial scenarios)
-data/seed/               # 10 seed data files (45 problems, 50 solutions)
-db/init.sql              # PostgreSQL schema (9 tables, indexes, seed settings)
-docs/spec/               # Roadmap and test specifications
-```
-
----
-
 ## Status — March 2026
 
 **Working POC running locally.** All MCP tools functional end-to-end. Not yet production-hardened for public deployment.
 
-| | |
-|---|---|
-| ✅ MCP server — all 5 tools working end-to-end | ✅ React admin dashboard (14 views, Tailwind v4) |
-| ✅ Trust scoring with decay and diversity bonus | ✅ Secret scanning middleware |
-| ✅ Environment-constrained semantic search | ✅ Failure clustering |
-| ✅ Duplicate problem detection (cosine > 0.92) | ✅ Scheduled synthesis agent |
-| ✅ Tier-based rate limiting (Redis sliding windows) | ✅ 7 async background jobs |
-| ✅ Append-only audit log | ✅ CUDA-accelerated embeddings (bge-m3) |
-| ✅ Query latency + resolution time metrics | ✅ CLI test agent + 45-problem seed dataset |
-| ✅ Pending index retry for failed dual-writes | ✅ Enriched query responses (steps, scores, env match) |
-| 🔜 Sandboxed solution verification | 🔜 Two-way federation sync |
-| 🔜 Behavioral Sybil resistance | 🔜 Production public instance |
+### Completed
+
+- MCP server — all 5 tools working end-to-end (query_solutions, submit_problem, submit_solution, submit_feedback, register_agent)
+- React admin dashboard — 14 views, Tailwind v4, light/dark theme with OS preference detection
+- Trust scoring with half-life decay, diversity bonus, and tier-weighted confidence
+- Secret scanning middleware (AWS keys, GitHub tokens, generic credential patterns)
+- Environment-constrained semantic search (hard-filter by framework before vector ranking)
+- Failure clustering via DBSCAN-style grouping in Qdrant with admin accept/dismiss workflow
+- Duplicate problem detection (cosine similarity > 0.92)
+- Scheduled synthesis agent with daily token budget, per-problem attempt cap, and auto-pause on low success rate
+- Tier-based rate limiting (anonymous / token_only / registered) via Redis sliding windows
+- 7 async background jobs (answer agent, clustering, decay, diversity, aggregation, pending index, sandbox purge)
+- Append-only audit log with CSV export
+- ONNX-accelerated embeddings (bge-m3, no PyTorch dependency required)
+- Query latency and resolution time metrics
+- CLI test agent + 45-problem seed dataset for development
+- Pending index retry for failed Qdrant dual-writes
+- Enriched query responses (steps, scores, environment match details)
+- Centralized logging system — color console output, rotating file logs, configurable LOG_LEVEL
+- Graceful startup error handling — clean CRITICAL log when Docker infrastructure is unavailable
+- Comprehensive admin UI with page-level help panels, action descriptions, and contextual guidance
+- Moderation queue with keyboard-driven workflow (dismiss / remove / remove-and-ban)
+- Landing page with animated hero, scroll-reveal sections, and overview strip
+
+### In progress
+
+- Sandboxed solution verification
+- Two-way federation sync
+- Behavioral Sybil resistance
+- Production public instance
 
 ---
 
@@ -350,6 +313,4 @@ docs/spec/               # Roadmap and test specifications
 
 See [LICENSE](LICENSE).
 
----
-
-*Designed and produced by [Mihai Ciprian Chezan](https://github.com/MihaiCiprianChezan) & [Claude (Anthropic)](https://www.anthropic.com) — 2026*
+*Designed and produced by [Mihai Ciprian Chezan](https://github.com/MihaiCiprianChezan) — 2026*
