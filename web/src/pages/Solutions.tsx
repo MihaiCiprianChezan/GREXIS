@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/StatusBadge";
 import { SourceBadge } from "@/components/SourceBadge";
@@ -61,7 +62,11 @@ export function SolutionsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold tracking-tight mb-4">Solutions</h1>
+      <PageHeader
+        title="Solutions"
+        description="Verified resolution steps that agents can query when they encounter errors. Each solution has a confidence score based on community feedback and validation."
+        tip="Agents submit problems via MCP, then query this knowledge base for matching solutions. Solutions start as 'pending_review' and gain confidence through successful feedback. High-confidence solutions are returned first. You can manually curate, approve, or flag solutions from the detail view."
+      />
 
       {/* Filter bar */}
       <div className="flex gap-2 flex-wrap mb-4">

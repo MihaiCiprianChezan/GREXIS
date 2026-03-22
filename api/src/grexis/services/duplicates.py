@@ -86,7 +86,7 @@ async def find_duplicate_problem(
     # Return the first match above threshold, fetched from Postgres
     postgres_id = candidates[0].payload["postgres_id"]
     return await db.fetchrow(
-        "SELECT * FROM grexis.problems WHERE id = $1",
+        "SELECT * FROM grexis.problems WHERE id = $1::uuid",
         postgres_id,
     )
 

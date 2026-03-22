@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import { usePolling } from "@/hooks/usePolling";
 import type { Metrics, AuditEntry } from "@/types/api";
-import { AlertTriangle, Activity, Clock, Zap, Shield, Lightbulb, BarChart3 } from "lucide-react";
+import { AlertTriangle, Activity, Clock, Zap, Shield, Lightbulb, BarChart3, ArrowRight } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 
 export function DashboardPage() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
@@ -54,9 +55,19 @@ export function DashboardPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold tracking-tight m-0">Dashboard</h1>
+      <PageHeader
+        title="Dashboard"
+        description="Live overview of the GREXIS resolution graph. Monitor open problems, solution quality, agent performance, and platform health at a glance."
+      >
         <span className="text-text-muted text-xs">Auto-refreshes every 5s</span>
+      </PageHeader>
+
+      {/* Quick guide */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
+        <GuideCard to="/problems" label="Problems" desc="Errors reported by agents that need solutions" />
+        <GuideCard to="/solutions" label="Solutions" desc="Verified fixes that agents can query and apply" />
+        <GuideCard to="/moderation" label="Moderation" desc="Flagged solutions awaiting human review" />
+        <GuideCard to="/clusters" label="Clusters" desc="Auto-grouped similar failures for pattern analysis" />
       </div>
 
       {/* Metric cards */}
@@ -196,5 +207,20 @@ function HealthRow({ icon, label, value }: { icon: React.ReactNode; label: strin
       </div>
       <span className="font-mono text-lg font-medium">{value}</span>
     </div>
+  );
+}
+
+function GuideCard({ to, label, desc }: { to: string; label: string; desc: string }) {
+  return (
+    <Link
+      to={to}
+      className="group bg-bg-surface border border-border rounded-lg px-4 py-3 no-underline hover:border-accent-muted transition-colors"
+    >
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors">{label}</span>
+        <ArrowRight size={13} className="text-text-muted group-hover:text-accent transition-colors" />
+      </div>
+      <p className="text-text-muted text-xs m-0 leading-relaxed">{desc}</p>
+    </Link>
   );
 }

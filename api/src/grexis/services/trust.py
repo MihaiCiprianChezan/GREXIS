@@ -138,7 +138,7 @@ async def handle_consecutive_failures(
     recent_feedbacks = await db.fetch(
         """
         SELECT outcome FROM grexis.feedback_events
-        WHERE solution_id = $1
+        WHERE solution_id = $1::uuid
         ORDER BY created_at DESC
         LIMIT 10
         """,
@@ -155,14 +155,14 @@ async def handle_consecutive_failures(
 
     if consecutive_failures >= threshold:
         await db.execute(
-            "UPDATE grexis.solutions SET status = 'flagged' WHERE id = $1",
+            "UPDATE grexis.solutions SET status = 'flagged' WHERE id = $1::uuid",
             solution_id,
         )
         await db.execute(
             """
             UPDATE grexis.solutions
             SET confidence_score = GREATEST(0.0, confidence_score - 0.5)
-            WHERE id = $1
+            WHERE id = $1::uuid
             """,
             solution_id,
         )

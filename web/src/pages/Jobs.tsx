@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { usePolling } from "@/hooks/usePolling";
 import type { AgentJob, Metrics } from "@/types/api";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 
 const PER_PAGE = 50;
 
@@ -50,7 +51,11 @@ export function JobsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold tracking-tight text-text-primary mb-4">Scheduled Agent</h1>
+      <PageHeader
+        title="Scheduled Agent"
+        description="An autonomous agent that periodically attempts to solve open problems. It uses an LLM to synthesize solutions, then submits them for review. Monitor its token budget, attempts, and success rate here."
+        tip="The agent picks up open problems (prioritizing blocking ones), generates candidate solutions using an LLM, and submits them to GREXIS. Each attempt is logged with reasoning, token usage, and outcome. The agent pauses automatically if its 7-day success rate drops below 35% to avoid wasting tokens."
+      />
 
       {/* Current status */}
       {metrics && (

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import type { Settings } from "@/types/api";
 import { Save } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 
 export function SettingsPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -111,7 +112,11 @@ export function SettingsPage() {
         </div>
       )}
 
-      <h1 className="text-xl font-semibold tracking-tight text-text-primary mb-6">Settings</h1>
+      <PageHeader
+        title="Settings"
+        description="Configure how GREXIS ranks solutions, decays trust scores, limits agent submissions, and runs the scheduled agent. Changes take effect immediately."
+        tip="Search Weights control how solutions are ranked when agents query (must sum to 1.0). Trust Decay controls how quickly old solutions lose confidence. Rate Limits prevent abuse by throttling submissions per tier. Secret Scanning rejects solutions that contain leaked API keys or credentials."
+      />
 
       {/* Search Weights */}
       <FormSection title="Search Weights">

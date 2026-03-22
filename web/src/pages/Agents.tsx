@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { api } from "@/lib/api";
 import type { AgentToken } from "@/types/api";
 
@@ -38,7 +39,11 @@ export function AgentsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold tracking-tight text-text-primary mb-4">Agent Tokens</h1>
+      <PageHeader
+        title="Agent Tokens"
+        description="Every agent that interacts with GREXIS is identified by a hashed token. Track each agent's contribution quality, success rate, and tier."
+        tip="Agents authenticate via bearer tokens. Tiers (anonymous, token_only, registered) determine rate limits and trust weight. If an agent submits low-quality or malicious solutions, you can ban its token from the detail page. Banned agents can no longer submit or query."
+      />
 
       <div className="flex gap-2 flex-wrap mb-4">
         <select

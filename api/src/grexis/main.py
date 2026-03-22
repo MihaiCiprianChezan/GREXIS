@@ -1,5 +1,6 @@
 import json
 import logging
+import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -8,6 +9,7 @@ from mcp.server.sse import SseServerTransport
 from mcp.types import TextContent
 
 from grexis.lib.config import get_settings
+from grexis.lib.logging import setup_logging
 from grexis import deps
 from grexis.mcp.server import server as mcp_server
 from grexis.mcp.query_solutions import handle_query_solutions
@@ -21,14 +23,27 @@ from grexis.scheduler.jobs import register_jobs, scheduler
 logger = logging.getLogger(__name__)
 
 
+async def _connect_service(name: str, connect_coro) -> None:
+    """Connect to an infrastructure service with clear error reporting."""
+    try:
+        await connect_coro
+    except Exception as exc:
+        logger.critical("Cannot connect to %s — is Docker running? (%s)", name, exc)
+        logger.debug("Connection failure detail:", exc_info=True)
+        sys.exit(1)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
 
+    # Logging must be initialised before anything else
+    setup_logging(settings.LOG_LEVEL)
+
     # Connect to data stores
-    await deps.postgres.connect(settings.POSTGRES_URL)
-    await deps.qdrant.connect(settings.QDRANT_URL)
-    await deps.redis.connect(settings.REDIS_URL)
+    await _connect_service("PostgreSQL", deps.postgres.connect(settings.POSTGRES_URL))
+    await _connect_service("Qdrant",     deps.qdrant.connect(settings.QDRANT_URL))
+    await _connect_service("Redis",      deps.redis.connect(settings.REDIS_URL))
 
     # Initialize embedding service FIRST (needed for vector_size)
     await deps.embed_service.initialize(

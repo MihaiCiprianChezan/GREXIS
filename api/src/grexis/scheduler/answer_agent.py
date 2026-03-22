@@ -74,7 +74,7 @@ async def check_scheduled_agent_health() -> bool:
     Only triggers when there are at least 20 attempts in the window so that
     the metric is statistically meaningful.
     """
-    cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+    cutoff = datetime.utcnow() - timedelta(days=7)
     stats = await postgres.fetchrow(
         """
         SELECT

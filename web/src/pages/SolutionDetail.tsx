@@ -270,31 +270,34 @@ export function SolutionDetailPage() {
         <div className="flex-[1_1_200px] min-w-[200px]">
           <div className="sticky top-6">
             <Section title="Actions">
+              <p className="text-text-muted text-xs mb-3 mt-0 leading-relaxed">
+                Change this solution's lifecycle status. Actions require a reason for the audit log.
+              </p>
               <div className="flex flex-col gap-2">
-                <button
+                <ActionButton
                   onClick={() => setModalAction("approve")}
-                  className="px-4 py-2 rounded-md text-sm font-semibold border-none cursor-pointer transition-colors bg-success text-white hover:brightness-110"
-                >
-                  Promote to curated
-                </button>
-                <button
+                  className="bg-success text-white hover:brightness-110"
+                  label="Promote to curated"
+                  hint="Mark as human-verified. Agents will see this as a trusted, high-priority solution."
+                />
+                <ActionButton
                   onClick={() => setModalAction("reject")}
-                  className="px-4 py-2 rounded-md text-sm font-semibold border-none cursor-pointer transition-colors bg-warning text-bg-base hover:brightness-110"
-                >
-                  Flag for review
-                </button>
-                <button
+                  className="bg-warning text-bg-base hover:brightness-110"
+                  label="Flag for review"
+                  hint="Send to the moderation queue. The solution won't be returned to agents until reviewed."
+                />
+                <ActionButton
                   onClick={() => setModalAction("supersede")}
-                  className="px-4 py-2 rounded-md text-sm font-semibold border-none cursor-pointer transition-colors bg-transparent text-text-secondary border border-border hover:bg-bg-elevated"
-                >
-                  Supersede
-                </button>
-                <button
+                  className="bg-transparent text-text-secondary border border-border hover:bg-bg-elevated"
+                  label="Supersede"
+                  hint="Replace with a better solution. This one becomes inactive but stays in history."
+                />
+                <ActionButton
                   onClick={() => setModalAction("delete")}
-                  className="px-4 py-2 rounded-md text-sm font-semibold border-none cursor-pointer transition-colors bg-danger text-white hover:brightness-110"
-                >
-                  Remove
-                </button>
+                  className="bg-danger text-white hover:brightness-110"
+                  label="Remove"
+                  hint="Soft-delete this solution. It won't appear in search results or be returned to agents."
+                />
                 {solution.agent_token_hash && (
                   <Link
                     to={`/agents/${solution.agent_token_hash}`}
@@ -303,6 +306,15 @@ export function SolutionDetailPage() {
                     View agent token
                   </Link>
                 )}
+              </div>
+            </Section>
+
+            <Section title="Understanding this page">
+              <div className="text-text-muted text-xs leading-relaxed space-y-2">
+                <p className="m-0"><strong className="text-text-secondary">Confidence Score</strong> reflects how reliable this solution is, based on feedback from agents that tried it (0 = untested, 1 = always works).</p>
+                <p className="m-0"><strong className="text-text-secondary">Success Rate</strong> is the % of feedback events that reported success.</p>
+                <p className="m-0"><strong className="text-text-secondary">Source Weight</strong> depends on who contributed it: human_curated (1.0) &gt; scheduled_agent (0.7) &gt; agent_contributed (0.5).</p>
+                <p className="m-0"><strong className="text-text-secondary">Graph Edges</strong> show how this solution connects to problems and feedback in the resolution graph.</p>
               </div>
             </Section>
           </div>
@@ -330,6 +342,25 @@ function Section({ title, children }: { title: string; children: React.ReactNode
         {title}
       </h3>
       {children}
+    </div>
+  );
+}
+
+function ActionButton({ onClick, className, label, hint }: {
+  onClick: () => void;
+  className: string;
+  label: string;
+  hint: string;
+}) {
+  return (
+    <div>
+      <button
+        onClick={onClick}
+        className={`w-full px-4 py-2 rounded-md text-sm font-semibold border-none cursor-pointer transition-colors ${className}`}
+      >
+        {label}
+      </button>
+      <p className="text-text-muted text-[11px] mt-1 mb-0 leading-relaxed px-1">{hint}</p>
     </div>
   );
 }

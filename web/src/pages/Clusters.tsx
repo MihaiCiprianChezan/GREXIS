@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import type { FailureCluster } from "@/types/api";
 import { Zap, CheckCircle, XCircle } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 
 export function ClustersPage() {
   const [clusters, setClusters] = useState<FailureCluster[]>([]);
@@ -71,8 +72,11 @@ export function ClustersPage() {
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-semibold tracking-tight text-text-primary">Failure Clusters</h1>
+      <PageHeader
+        title="Failure Clusters"
+        description="Automatically grouped similar failure patterns. Clusters help identify systemic issues across multiple problems so you can write one solution that fixes many errors at once."
+        tip="The clustering job runs periodically and groups problems with similar error signatures using vector similarity. 'Accept' a cluster to confirm it's a real pattern worth addressing. 'Dismiss' it if the grouping is noise. Use 'Trigger Clustering' to run the job immediately."
+      >
         <button
           onClick={handleTrigger}
           disabled={triggering}
@@ -81,7 +85,7 @@ export function ClustersPage() {
           <Zap size={14} />
           {triggering ? "Triggering..." : "Trigger Clustering"}
         </button>
-      </div>
+      </PageHeader>
 
       {/* Tabs */}
       <div className="flex gap-1 mb-4">

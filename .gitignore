@@ -26,6 +26,7 @@ venv/
 
 # Logs
 *.log
+**/log/
 
 # Qdrant data (local dev)
 qdrant_data/

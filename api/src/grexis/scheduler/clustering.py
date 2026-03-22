@@ -122,7 +122,7 @@ async def run_clustering_job() -> None:
     # ------------------------------------------------------------------
     # 5. Persist to grexis.failure_clusters
     # ------------------------------------------------------------------
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
 
     # Clear previous clusters (full rebuild each run)
     await postgres.execute("DELETE FROM grexis.failure_clusters")

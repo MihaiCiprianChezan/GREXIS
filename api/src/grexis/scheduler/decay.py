@@ -70,7 +70,7 @@ async def recompute_decay() -> None:
     """
     settings = get_settings()
     half_life = settings.TRUST_DECAY_DEFAULT_HALF_LIFE_DAYS
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
 
     logger.info("Decay recomputation: starting (half_life=%d days)", half_life)
 

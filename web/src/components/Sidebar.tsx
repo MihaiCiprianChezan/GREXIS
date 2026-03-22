@@ -16,7 +16,10 @@ import {
   Settings,
   LogOut,
   Zap,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 
 const NAV_ITEMS_TOP = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -35,6 +38,7 @@ const NAV_ITEMS_BOTTOM = [
 ];
 
 export function Sidebar() {
+  const { theme, toggle: toggleTheme } = useTheme();
   const [counts, setCounts] = useState<BadgeCounts>({ problems: 0, moderation: 0, clusters: 0 });
 
   const fetchCounts = useCallback(() => {
@@ -126,11 +130,8 @@ export function Sidebar() {
         ))}
       </div>
 
-      {/* Spacer */}
-      <div className="flex-1" />
-
       {/* User section */}
-      <div className="border-t border-border p-4">
+      <div className="border-t border-border p-4 mt-3">
         <div className="flex items-center gap-2.5 mb-3">
           <div className="w-7 h-7 rounded-full bg-bg-elevated flex items-center justify-center text-[11px] font-semibold text-text-secondary">
             A
@@ -140,13 +141,22 @@ export function Sidebar() {
             <div className="text-[11px] text-text-muted">admin@local</div>
           </div>
         </div>
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-3 py-1.5 text-[13px] text-text-secondary hover:text-danger bg-transparent border border-border hover:border-danger-muted rounded-md cursor-pointer transition-colors"
-        >
-          <LogOut size={14} />
-          Sign out
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={toggleTheme}
+            className="flex items-center gap-2 px-3 py-1.5 text-[13px] text-text-secondary hover:text-accent bg-transparent border border-border hover:border-accent-muted rounded-md cursor-pointer transition-colors"
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          >
+            {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+          </button>
+          <button
+            onClick={handleLogout}
+            className="flex-1 flex items-center gap-2 px-3 py-1.5 text-[13px] text-text-secondary hover:text-danger bg-transparent border border-border hover:border-danger-muted rounded-md cursor-pointer transition-colors"
+          >
+            <LogOut size={14} />
+            Sign out
+          </button>
+        </div>
       </div>
     </nav>
   );

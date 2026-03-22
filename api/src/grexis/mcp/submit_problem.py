@@ -53,7 +53,7 @@ async def handle_submit_problem(
         # Duplicate found — increment count, create edge, return existing
         existing_postgres_id = candidates[0].payload["postgres_id"]
         await deps.postgres.execute(
-            "UPDATE grexis.problems SET duplicate_count = duplicate_count + 1 WHERE id = $1",
+            "UPDATE grexis.problems SET duplicate_count = duplicate_count + 1 WHERE id = $1::uuid",
             existing_postgres_id,
         )
         existing_id = str(existing_postgres_id)

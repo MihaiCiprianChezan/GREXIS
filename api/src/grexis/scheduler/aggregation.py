@@ -30,7 +30,7 @@ async def aggregate_old_feedback() -> None:
     """
     logger.info("Feedback aggregation: starting")
 
-    cutoff = datetime.now(timezone.utc) - timedelta(days=AGGREGATION_WINDOW_DAYS)
+    cutoff = datetime.utcnow() - timedelta(days=AGGREGATION_WINDOW_DAYS)
 
     # Find solutions that have un-aggregated feedback older than the cutoff
     solution_rows = await postgres.fetch(

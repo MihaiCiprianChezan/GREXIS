@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     # Sandbox
     SANDBOX_MODE: bool = False
 
+    # Logging
+    LOG_LEVEL: str = "INFO"
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

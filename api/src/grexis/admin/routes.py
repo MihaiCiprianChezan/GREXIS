@@ -93,22 +93,21 @@ async def list_solutions(
 @router.get("/solutions/{solution_id}")
 async def get_solution(solution_id: str, admin=Depends(require_admin)):
     solution = await deps.postgres.fetchrow(
-        "SELECT * FROM grexis.solutions WHERE id = $1", solution_id
+        "SELECT * FROM grexis.solutions WHERE id = $1::uuid", solution_id
     )
     if not solution:
         raise HTTPException(404, "Solution not found")
 
     feedbacks = await deps.postgres.fetch(
-        "SELECT * FROM grexis.feedback_events WHERE solution_id = $1 ORDER BY created_at DESC", solution_id
+        "SELECT * FROM grexis.feedback_events WHERE solution_id = $1::uuid ORDER BY created_at DESC", solution_id
     )
     edges = await deps.postgres.fetch(
-        "SELECT * FROM grexis.resolution_edges WHERE source_node_id = $1 OR target_node_id = $1", solution_id
+        "SELECT * FROM grexis.resolution_edges WHERE source_node_id = $1::uuid OR target_node_id = $1::uuid", solution_id
     )
-    return {
-        "solution": dict(solution),
-        "feedback_events": [dict(f) for f in feedbacks],
-        "edges": [dict(e) for e in edges],
-    }
+    result = dict(solution)
+    result["feedback_history"] = [dict(f) for f in feedbacks]
+    result["edges"] = [dict(e) for e in edges]
+    return result
 
 
 @router.post("/solutions")
@@ -173,7 +172,7 @@ async def update_solution(solution_id: str, request: Request, admin=Depends(requ
 
     params.append(solution_id)
     await deps.postgres.execute(
-        f"UPDATE grexis.solutions SET {', '.join(set_clauses)} WHERE id = ${idx}",
+        f"UPDATE grexis.solutions SET {', '.join(set_clauses)} WHERE id = ${idx}::uuid",
         *params,
     )
 
@@ -183,7 +182,7 @@ async def update_solution(solution_id: str, request: Request, admin=Depends(requ
     qdrant_updates = {k: v for k, v in body.items() if k in qdrant_syncable}
     if qdrant_updates:
         row = await deps.postgres.fetchrow(
-            "SELECT qdrant_point_id FROM grexis.solutions WHERE id = $1", solution_id
+            "SELECT qdrant_point_id FROM grexis.solutions WHERE id = $1::uuid", solution_id
         )
         if row and row["qdrant_point_id"]:
             from qdrant_client.models import SetPayload
@@ -208,7 +207,7 @@ async def delete_solution(solution_id: str, request: Request, admin=Depends(requ
         raise HTTPException(422, "Reason is required for deletion")
 
     await deps.postgres.execute(
-        "UPDATE grexis.solutions SET status = 'inactive' WHERE id = $1", solution_id
+        "UPDATE grexis.solutions SET status = 'inactive' WHERE id = $1::uuid", solution_id
     )
 
     await log_to_audit(
@@ -259,7 +258,7 @@ async def list_problems(
 @router.get("/problems/{problem_id}")
 async def get_problem(problem_id: str, admin=Depends(require_admin)):
     problem = await deps.postgres.fetchrow(
-        "SELECT * FROM grexis.problems WHERE id = $1", problem_id
+        "SELECT * FROM grexis.problems WHERE id = $1::uuid", problem_id
     )
     if not problem:
         raise HTTPException(404, "Problem not found")
@@ -267,22 +266,21 @@ async def get_problem(problem_id: str, admin=Depends(require_admin)):
     # Linked solutions via edges
     solutions = await deps.postgres.fetch("""
         SELECT s.* FROM grexis.solutions s
-        JOIN grexis.resolution_edges e ON e.source_node_id = s.id::text
-        WHERE e.target_node_id = $1 AND e.edge_type = 'solution_resolves_problem'
+        JOIN grexis.resolution_edges e ON e.source_node_id = s.id
+        WHERE e.target_node_id = $1::uuid AND e.edge_type = 'solution_resolves_problem'
     """, problem_id)
 
     # Agent jobs with synthesis logs
     jobs = await deps.postgres.fetch("""
         SELECT * FROM grexis.agent_jobs
-        WHERE problem_id = $1
+        WHERE problem_id = $1::uuid
         ORDER BY created_at DESC
     """, problem_id)
 
-    return {
-        "problem": dict(problem),
-        "solutions": [dict(s) for s in solutions],
-        "agent_jobs": [dict(j) for j in jobs],
-    }
+    result = dict(problem)
+    result["solutions"] = [dict(s) for s in solutions]
+    result["jobs"] = [dict(j) for j in jobs]
+    return result
 
 
 # --- Tokens ---
@@ -457,7 +455,7 @@ async def accept_cluster(cluster_id: str, request: Request, admin=Depends(requir
     reason = body.get("reason", "")
 
     await deps.postgres.execute(
-        "UPDATE grexis.failure_clusters SET admin_status = 'accepted' WHERE id = $1",
+        "UPDATE grexis.failure_clusters SET admin_status = 'accepted' WHERE id = $1::uuid",
         cluster_id,
     )
     await log_to_audit(
@@ -473,7 +471,7 @@ async def dismiss_cluster(cluster_id: str, request: Request, admin=Depends(requi
     reason = body.get("reason", "")
 
     await deps.postgres.execute(
-        "UPDATE grexis.failure_clusters SET admin_status = 'dismissed' WHERE id = $1",
+        "UPDATE grexis.failure_clusters SET admin_status = 'dismissed' WHERE id = $1::uuid",
         cluster_id,
     )
     await log_to_audit(

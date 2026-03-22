@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, Fragment } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/StatusBadge";
 import { SeverityBadge } from "@/components/SeverityBadge";
@@ -85,7 +86,11 @@ export function ProblemsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold tracking-tight mb-4">Problems</h1>
+      <PageHeader
+        title="Problems"
+        description="Errors reported by agents that don't yet have good solutions. Blocking problems prevent agents from completing tasks and should be prioritized."
+        tip="When an agent encounters an error, it submits a problem here. GREXIS deduplicates similar errors and tracks duplicate counts. Problems with no high-confidence solution show a 'Quick resolve' button so you can manually write a fix. The scheduled agent also attempts to solve open problems automatically."
+      />
 
       {/* Filter bar */}
       <div className="flex gap-2 flex-wrap mb-4">

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import type { Metrics } from "@/types/api";
+import { PageHeader } from "@/components/PageHeader";
 
 interface MetricDef {
   key: keyof Metrics;
@@ -41,7 +42,10 @@ export function MetricsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold tracking-tight text-text-primary mb-4">Metrics</h1>
+      <PageHeader
+        title="Metrics"
+        description="Key performance indicators for the GREXIS platform. All values are computed in real-time from the database."
+      />
 
       {loading && (
         <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>

@@ -120,6 +120,13 @@ export function ProblemDetailPage() {
         </span>
       </div>
 
+      <p className="text-text-muted text-sm mt-0 mb-4 leading-relaxed max-w-[720px]">
+        This problem was reported by an agent that encountered this error and couldn't find an existing solution.
+        {problem.status === "open" && " It's still open — you can write a manual solution below, or wait for the scheduled agent to attempt it."}
+        {problem.status === "solved" && " It has been resolved — linked solutions are shown below."}
+        {problem.duplicate_count > 1 && ` ${problem.duplicate_count} agents have reported the same error, suggesting this is a common issue.`}
+      </p>
+
       {error && (
         <div className="flex items-center gap-2 text-danger text-sm mb-3">
           <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -157,9 +164,9 @@ export function ProblemDetailPage() {
       )}
 
       {/* Existing solutions */}
-      <Section title="Existing Solutions">
+      <Section title="Existing Solutions" hint="Solutions that have been linked to this problem via the resolution graph. Click one to review its details, confidence score, and feedback history.">
         {(!problem.solutions || problem.solutions.length === 0) ? (
-          <p className="text-text-muted m-0 text-sm">No linked solutions</p>
+          <p className="text-text-muted m-0 text-sm">No linked solutions yet. You can write one below, or the scheduled agent may attempt to solve it automatically.</p>
         ) : (
           <table className="w-full border-collapse text-sm">
             <thead>
@@ -187,9 +194,9 @@ export function ProblemDetailPage() {
       </Section>
 
       {/* Scheduled agent attempts */}
-      <Section title="Scheduled Agent Attempts">
+      <Section title="Scheduled Agent Attempts" hint="The autonomous agent periodically tries to solve open problems using an LLM. Each attempt shows the reasoning, outcome, and token cost.">
         {(!problem.jobs || problem.jobs.length === 0) ? (
-          <p className="text-text-muted m-0 text-sm">No agent attempts</p>
+          <p className="text-text-muted m-0 text-sm">The scheduled agent hasn't attempted this problem yet. It runs every 30 minutes and prioritizes blocking issues.</p>
         ) : (
           problem.jobs.map((job) => (
             <div key={job.id} className="mb-3">
@@ -314,10 +321,12 @@ export function ProblemDetailPage() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="bg-bg-surface border border-border rounded-lg p-5 mb-4">
-      <h3 className="m-0 mb-3 text-[11px] font-semibold text-text-muted uppercase tracking-wide">{title}</h3>
+      <h3 className="m-0 mb-1 text-[11px] font-semibold text-text-muted uppercase tracking-wide">{title}</h3>
+      {hint && <p className="text-text-muted text-xs mt-0 mb-3 leading-relaxed">{hint}</p>}
+      {!hint && <div className="mb-2" />}
       {children}
     </div>
   );

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import type { AuditEntry } from "@/types/api";
 import { Download } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 
 const PER_PAGE = 100;
 
@@ -68,8 +69,10 @@ export function AuditPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-semibold tracking-tight text-text-primary">Audit Log</h1>
+      <PageHeader
+        title="Audit Log"
+        description="Complete record of every action taken on the platform — by admins, agents, and the system. Use this for accountability, debugging, and compliance."
+      >
         <button
           onClick={exportCsv}
           className="px-4 py-2 bg-accent text-white rounded-md text-sm font-medium border-none cursor-pointer hover:bg-accent-hover transition-colors flex items-center gap-2"
@@ -77,7 +80,7 @@ export function AuditPage() {
           <Download size={14} />
           Export CSV
         </button>
-      </div>
+      </PageHeader>
 
       <div className="flex gap-2 flex-wrap mb-4">
         <select

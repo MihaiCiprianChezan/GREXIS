@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { CheckCircle, Trash2, Ban } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/StatusBadge";
 import { SourceBadge } from "@/components/SourceBadge";
@@ -91,7 +92,13 @@ export function ModerationPage() {
   };
 
   return (
-    <div className="flex" style={{ height: "calc(100vh - 48px)" }}>
+    <div>
+      <PageHeader
+        title="Moderation Queue"
+        description="Solutions flagged for human review. These were either auto-flagged after consecutive failures or manually flagged by an admin. Review each one and decide whether to keep, remove, or ban the contributing agent."
+        tip="A solution gets flagged when it receives 5+ consecutive failure feedbacks, or when an admin flags it manually. 'Dismiss flag' clears the flag and sets the solution back to active. 'Remove' soft-deletes it. 'Remove & Ban' also bans the agent token that contributed it."
+      />
+      <div className="flex" style={{ height: "calc(100vh - 180px)" }}>
       {toast && (
         <div className="fixed top-4 right-4 bg-success text-white px-5 py-2.5 rounded-md z-50 text-sm">
           {toast}
@@ -220,6 +227,7 @@ export function ModerationPage() {
             </div>
           </div>
         )}
+      </div>
       </div>
 
       {modalAction && (

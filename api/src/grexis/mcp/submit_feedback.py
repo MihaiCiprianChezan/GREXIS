@@ -41,13 +41,13 @@ async def handle_submit_feedback(
     # Update last_validated_at on success/partial
     if outcome in ("success", "partial"):
         await deps.postgres.execute(
-            "UPDATE grexis.solutions SET last_validated_at = NOW() WHERE id = $1", solution_id
+            "UPDATE grexis.solutions SET last_validated_at = NOW() WHERE id = $1::uuid", solution_id
         )
 
     # Recompute trust score — inline simplified formula (decay/diversity/age
     # are handled by the scheduled decay job every 6 hours)
     feedbacks = await deps.postgres.fetch(
-        "SELECT outcome FROM grexis.feedback_events WHERE solution_id = $1", solution_id
+        "SELECT outcome FROM grexis.feedback_events WHERE solution_id = $1::uuid", solution_id
     )
 
     # Resolve tier from agent_tokens table, fall back to 'anonymous'
@@ -64,14 +64,14 @@ async def handle_submit_feedback(
     new_score = max(0.0, min(1.0, base + delta_sum))
 
     await deps.postgres.execute(
-        "UPDATE grexis.solutions SET confidence_score = $1 WHERE id = $2", new_score, solution_id
+        "UPDATE grexis.solutions SET confidence_score = $1 WHERE id = $2::uuid", new_score, solution_id
     )
 
     # Inline consecutive-failure check (threshold = 5)
     recent_feedbacks = await deps.postgres.fetch(
         """
         SELECT outcome FROM grexis.feedback_events
-        WHERE solution_id = $1
+        WHERE solution_id = $1::uuid
         ORDER BY created_at DESC
         LIMIT 10
         """,
@@ -86,14 +86,14 @@ async def handle_submit_feedback(
 
     if consecutive_failures >= _CONSECUTIVE_FAILURE_THRESHOLD:
         await deps.postgres.execute(
-            "UPDATE grexis.solutions SET status = 'flagged' WHERE id = $1",
+            "UPDATE grexis.solutions SET status = 'flagged' WHERE id = $1::uuid",
             solution_id,
         )
         await deps.postgres.execute(
             """
             UPDATE grexis.solutions
             SET confidence_score = GREATEST(0.0, confidence_score - 0.5)
-            WHERE id = $1
+            WHERE id = $1::uuid
             """,
             solution_id,
         )
