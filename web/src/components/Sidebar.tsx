@@ -15,7 +15,6 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Zap,
   Sun,
   Moon,
 } from "lucide-react";
@@ -62,12 +61,11 @@ export function Sidebar() {
   return (
     <nav className="w-[240px] min-h-screen bg-bg-surface border-r border-border flex flex-col shrink-0">
       {/* Brand */}
-      <div className="px-5 pt-5 pb-4 flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-lg bg-accent-muted flex items-center justify-center">
-          <Zap size={16} className="text-accent" />
-        </div>
-        <span className="text-[15px] font-semibold tracking-tight text-text-primary">
-          GREXIS
+      <div className="px-5 pt-5 pb-4">
+        <span className="text-[22px] font-bold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+          <span className="text-text-primary">GRE</span>
+          <span className="text-accent">X</span>
+          <span className="text-text-primary">IS</span>
         </span>
       </div>
 

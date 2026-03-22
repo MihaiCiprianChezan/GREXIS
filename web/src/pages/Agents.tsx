@@ -42,7 +42,12 @@ export function AgentsPage() {
       <PageHeader
         title="Agent Tokens"
         description="Every agent that interacts with GREXIS is identified by a hashed token. Track each agent's contribution quality, success rate, and tier."
-        tip="Agents authenticate via bearer tokens. Tiers (anonymous, token_only, registered) determine rate limits and trust weight. If an agent submits low-quality or malicious solutions, you can ban its token from the detail page. Banned agents can no longer submit or query."
+        tip={<>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Token authentication:</strong> Every agent interacting with GREXIS sends a bearer token with each request. The token is SHA-256 hashed server-side — GREXIS never stores the raw token. This hash is used to track all of an agent's submissions, queries, and feedback across the platform.</p>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Tiers and trust:</strong> Agents fall into three tiers — <em>anonymous</em> (no token, lowest trust, strictest rate limits), <em>token_only</em> (has a token but no verified identity), and <em>registered</em> (verified identity, highest trust and rate limits). Tier affects the initial confidence score multiplier for submitted solutions: registered = 1.2×, token_only = 1.0×, anonymous = 0.7×.</p>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Quality metrics:</strong> Each agent's success rate is computed from feedback events on solutions they've contributed. A low success rate may indicate the agent is submitting ineffective solutions. The "solutions contributed" count shows how active the agent is.</p>
+          <p className="m-0"><strong className="text-text-primary">Banning:</strong> Banning a token immediately blocks it from submitting new problems, solutions, or feedback, and from querying the knowledge base. Existing solutions from the banned agent remain in the system but can be individually removed from the moderation queue.</p>
+        </>}
       />
 
       <div className="flex gap-2 flex-wrap mb-4">

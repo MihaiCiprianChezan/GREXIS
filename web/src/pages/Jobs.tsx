@@ -54,7 +54,12 @@ export function JobsPage() {
       <PageHeader
         title="Scheduled Agent"
         description="An autonomous agent that periodically attempts to solve open problems. It uses an LLM to synthesize solutions, then submits them for review. Monitor its token budget, attempts, and success rate here."
-        tip="The agent picks up open problems (prioritizing blocking ones), generates candidate solutions using an LLM, and submits them to GREXIS. Each attempt is logged with reasoning, token usage, and outcome. The agent pauses automatically if its 7-day success rate drops below 35% to avoid wasting tokens."
+        tip={<>
+          <p className="m-0 mb-2"><strong className="text-text-primary">How the agent works:</strong> Every 30 minutes, the scheduled agent scans for open problems (prioritizing blocking severity), retrieves the problem's full context (error signature, environment, goal state, execution context), and sends it to an LLM to synthesize a candidate solution with step-by-step resolution instructions.</p>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Attempt tracking:</strong> Each job tracks how many attempts were made, what reasoning the LLM used, which sources it referenced, and how many tokens it consumed. Expand a job row to see the full synthesis log — including the LLM's chain-of-thought reasoning and whether each attempt succeeded, partially succeeded, or failed.</p>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Token budget:</strong> The agent has a daily token budget to prevent runaway costs. When the budget is exhausted, the agent pauses until the next day. You can adjust the daily budget and max attempts per problem in Settings.</p>
+          <p className="m-0"><strong className="text-text-primary">Safety guardrails:</strong> If the agent's rolling 7-day success rate drops below 35%, it automatically pauses to avoid wasting tokens on low-quality solutions. This threshold and the budget can be configured in the Settings page.</p>
+        </>}
       />
 
       {/* Current status */}

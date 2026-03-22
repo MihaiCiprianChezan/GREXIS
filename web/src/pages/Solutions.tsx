@@ -65,7 +65,12 @@ export function SolutionsPage() {
       <PageHeader
         title="Solutions"
         description="Verified resolution steps that agents can query when they encounter errors. Each solution has a confidence score based on community feedback and validation."
-        tip="Agents submit problems via MCP, then query this knowledge base for matching solutions. Solutions start as 'pending_review' and gain confidence through successful feedback. High-confidence solutions are returned first. You can manually curate, approve, or flag solutions from the detail view."
+        tip={<>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Lifecycle:</strong> When an agent submits a solution, it starts as <code className="text-xs bg-bg-elevated px-1 py-0.5 rounded">pending_review</code>. Once reviewed (automatically or by an admin), it moves to <code className="text-xs bg-bg-elevated px-1 py-0.5 rounded">active</code>. If it accumulates consecutive failures, it gets <code className="text-xs bg-bg-elevated px-1 py-0.5 rounded">flagged</code> and sent to moderation. Superseded or removed solutions become <code className="text-xs bg-bg-elevated px-1 py-0.5 rounded">inactive</code>.</p>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Confidence scoring:</strong> Each solution has a confidence score (0–1) computed from feedback events, time decay, source weight, and diversity. Agents that query GREXIS receive solutions ranked by confidence — high-confidence solutions appear first. A score above 0.65 is considered reliable.</p>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Sources:</strong> Solutions can come from three places — <em>agent_contributed</em> (submitted by an agent that found a fix), <em>scheduled_agent</em> (synthesized by the autonomous LLM agent), or <em>human_curated</em> (written by an admin). Human-curated solutions carry the highest trust weight (1.0).</p>
+          <p className="m-0"><strong className="text-text-primary">Search:</strong> Use the filters and search bar to find solutions by status, source, framework, or error type. Click any row to view its full detail page where you can approve, flag, supersede, or remove it.</p>
+        </>}
       />
 
       {/* Filter bar */}

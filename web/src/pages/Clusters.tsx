@@ -75,7 +75,12 @@ export function ClustersPage() {
       <PageHeader
         title="Failure Clusters"
         description="Automatically grouped similar failure patterns. Clusters help identify systemic issues across multiple problems so you can write one solution that fixes many errors at once."
-        tip="The clustering job runs periodically and groups problems with similar error signatures using vector similarity. 'Accept' a cluster to confirm it's a real pattern worth addressing. 'Dismiss' it if the grouping is noise. Use 'Trigger Clustering' to run the job immediately."
+        tip={<>
+          <p className="m-0 mb-2"><strong className="text-text-primary">How clustering works:</strong> The clustering job embeds each problem's error signature (type + code + tool + details) into a vector using the bge-m3 model, then uses DBSCAN-style grouping in Qdrant to find problems with high cosine similarity. Problems that cluster together likely share a root cause and can be solved with a single solution.</p>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Accepting a cluster:</strong> When you accept a cluster, you confirm it represents a real, recurring failure pattern. Accepted clusters appear in the "Accepted" tab and can be used to prioritize which problems the scheduled agent tackles next. The member count shows how many individual problems are in the group.</p>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Dismissing a cluster:</strong> Dismiss clusters that are false positives — where the vector similarity grouped unrelated errors together. Dismissed clusters won't reappear unless new problems significantly change the cluster composition.</p>
+          <p className="m-0"><strong className="text-text-primary">Manual trigger:</strong> The clustering job runs automatically on a schedule, but you can click "Trigger Clustering" to run it immediately — useful after a batch of new problems comes in and you want to see patterns right away.</p>
+        </>}
       >
         <button
           onClick={handleTrigger}

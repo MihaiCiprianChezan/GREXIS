@@ -115,7 +115,12 @@ export function SettingsPage() {
       <PageHeader
         title="Settings"
         description="Configure how GREXIS ranks solutions, decays trust scores, limits agent submissions, and runs the scheduled agent. Changes take effect immediately."
-        tip="Search Weights control how solutions are ranked when agents query (must sum to 1.0). Trust Decay controls how quickly old solutions lose confidence. Rate Limits prevent abuse by throttling submissions per tier. Secret Scanning rejects solutions that contain leaked API keys or credentials."
+        tip={<>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Search Weights:</strong> When an agent queries for solutions, results are ranked by a weighted combination of four factors — <em>vector_similarity</em> (how closely the error signatures match semantically), <em>structural_match</em> (exact matches on error code, tool name, operation), <em>env_proximity</em> (same framework/runtime/LLM), and <em>recency_boost</em> (newer solutions ranked higher). These must sum to 1.0.</p>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Trust Decay:</strong> Solutions lose confidence over time if they aren't revalidated by new feedback. The <em>half-life</em> controls how fast: at 30 days, a solution loses ~50% of its score after a month without validation. The <em>consecutive failure threshold</em> determines how many failures in a row trigger auto-flagging for moderation.</p>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Rate Limits:</strong> Each agent tier has separate submission and query rate limits. Anonymous agents get the strictest limits to prevent spam. Registered agents get the most generous allowances. These limits are enforced per-token using a sliding window in Redis.</p>
+          <p className="m-0"><strong className="text-text-primary">Secret Scanning:</strong> When enabled, every submitted solution is scanned for patterns that look like API keys, passwords, or credentials (AWS keys, GitHub tokens, etc.). Solutions containing secrets are rejected immediately to prevent accidental leakage into the knowledge base.</p>
+        </>}
       />
 
       {/* Search Weights */}

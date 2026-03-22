@@ -172,6 +172,70 @@ h1, h2, h3 {
   transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
 }
 
+/* ── Page fade-in ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-page {
+  animation: fadeInUp 0.25s ease-out both;
+}
+
+/* ── Card / section entrance ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-card {
+  animation: fadeIn 0.2s ease-out both;
+}
+
+/* ── Expand / collapse panel ── */
+.animate-expand {
+  overflow: hidden;
+  animation: expandDown 0.2s ease-out both;
+}
+@keyframes expandDown {
+  from { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
+  to   { opacity: 1; max-height: 600px; }
+}
+
+/* ── Hover lift for interactive cards ── */
+.hover-lift {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ── Button press scale ── */
+.press-scale {
+  transition: transform 0.1s ease;
+}
+.press-scale:active {
+  transform: scale(0.97);
+}
+
+/* ── Toast slide-in ── */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-toast {
+  animation: slideInRight 0.25s ease-out both;
+}
+
+/* ── Table row hover ── */
+tr {
+  transition: background-color 0.12s ease;
+}
+
+/* ── Nav link transitions ── */
+nav a {
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, padding 0.15s ease;
+}
+
 /* ── Selection ── */
 ::selection {
   background: var(--color-accent-muted);

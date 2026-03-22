@@ -96,7 +96,12 @@ export function ModerationPage() {
       <PageHeader
         title="Moderation Queue"
         description="Solutions flagged for human review. These were either auto-flagged after consecutive failures or manually flagged by an admin. Review each one and decide whether to keep, remove, or ban the contributing agent."
-        tip="A solution gets flagged when it receives 5+ consecutive failure feedbacks, or when an admin flags it manually. 'Dismiss flag' clears the flag and sets the solution back to active. 'Remove' soft-deletes it. 'Remove & Ban' also bans the agent token that contributed it."
+        tip={<>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Why solutions get flagged:</strong> A solution enters moderation for two reasons — it received 5+ consecutive failure feedbacks from agents (auto-flagged by the trust decay system), or an admin manually flagged it from the solution detail page. Flagged solutions are immediately hidden from agent queries until reviewed.</p>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Dismiss flag:</strong> If you determine the solution is valid (e.g., failures were due to environment issues, not the solution itself), dismiss the flag. This sets the solution back to <code className="text-xs bg-bg-elevated px-1 py-0.5 rounded">active</code> and makes it available to agents again. Its confidence score resets based on its current feedback history.</p>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Remove:</strong> Soft-deletes the solution by setting its status to <code className="text-xs bg-bg-elevated px-1 py-0.5 rounded">inactive</code>. It won't appear in search results or be returned to agents, but it remains in the database for audit purposes. The contributing agent is not affected.</p>
+          <p className="m-0"><strong className="text-text-primary">Remove &amp; Ban:</strong> Removes the solution AND bans the contributing agent's token. Use this for clearly malicious or spam submissions. The banned agent will receive 403 errors on all future API calls. This action is logged in the audit trail.</p>
+        </>}
       />
       <div className="flex" style={{ height: "calc(100vh - 180px)" }}>
       {toast && (

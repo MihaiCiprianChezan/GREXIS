@@ -89,7 +89,12 @@ export function ProblemsPage() {
       <PageHeader
         title="Problems"
         description="Errors reported by agents that don't yet have good solutions. Blocking problems prevent agents from completing tasks and should be prioritized."
-        tip="When an agent encounters an error, it submits a problem here. GREXIS deduplicates similar errors and tracks duplicate counts. Problems with no high-confidence solution show a 'Quick resolve' button so you can manually write a fix. The scheduled agent also attempts to solve open problems automatically."
+        tip={<>
+          <p className="m-0 mb-2"><strong className="text-text-primary">How problems are created:</strong> When an agent calls an MCP tool and encounters an error it can't resolve, it submits a problem report containing the error type, error code, tool name, operation, goal state, and environment details. GREXIS uses vector similarity to check if a matching problem already exists — if so, the duplicate count is incremented instead of creating a new entry.</p>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Severity levels:</strong> <em>Blocking</em> means the agent cannot proceed at all — these are highest priority. <em>Degraded</em> means partial functionality loss. <em>Cosmetic</em> means the error doesn't affect core operations. The scheduled agent prioritizes blocking problems first.</p>
+          <p className="m-0 mb-2"><strong className="text-text-primary">Resolution flow:</strong> Problems can be resolved in two ways — manually by an admin using the "Quick resolve" button (which creates a human_curated solution), or automatically by the scheduled agent that runs every 30 minutes. Once a high-confidence solution is linked, the problem status changes to <code className="text-xs bg-bg-elevated px-1 py-0.5 rounded">solved</code>.</p>
+          <p className="m-0"><strong className="text-text-primary">Staleness:</strong> Problems that remain open for too long without any resolution attempts are marked <code className="text-xs bg-bg-elevated px-1 py-0.5 rounded">stale</code>. High duplicate counts on open problems indicate systemic issues worth investigating.</p>
+        </>}
       />
 
       {/* Filter bar */}
